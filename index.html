@@ -1082,21 +1082,128 @@ function tideFallback(){
 // WEATHER — Open-Meteo
 // ══════════════════════════════════════════════════════════════════
 async function fetchWeather(){
-  const url=`https://api.open-meteo.com/v1/forecast?latitude=${ST.lat}&longitude=${ST.lon}&current=temperature_2m,wind_speed_10m,wind_direction_10m,wind_gusts_10m,surface_pressure,wave_height,weather_code&hourly=surface_pressure&wind_speed_unit=kn&temperature_unit=fahrenheit&timezone=auto&forecast_days=1`;
+  var nwsLat, nwsLon;
+
+  // ── Snap to nearest reliable land point for NWS API ──
+  // NWS only covers US land. We use fixed known-good coordinates per region
+  // so NWS /points always succeeds — no retries needed.
+  if(ST.region==='keys'){
+    // Snap pin northward onto the island chain (keys are ~0.02° wide)
+    // Use actual pin lon but add 0.05° lat to ensure we hit land
+    nwsLat=(ST.lat+0.05).toFixed(4);
+    nwsLon=ST.lon.toFixed(4);
+  } else if(ST.region==='pine'){
+    nwsLat=(ST.lat+0.04).toFixed(4);
+    nwsLon=ST.lon.toFixed(4);
+  } else {
+    // International (Belize, Mexico) — NWS doesn't cover, skip to Open-Meteo
+    nwsLat=null; nwsLon=null;
+  }
+
+  // ── NWS api.weather.gov ──
+  if(nwsLat&&nwsLon){
+    try{
+      var ptR=await fetch('https://api.weather.gov/points/'+nwsLat+','+nwsLon,
+        {headers:{'User-Agent':'B2FlatsStalker/1.0','Accept':'application/geo+json'}});
+      if(!ptR.ok)throw new Error('NWS points HTTP '+ptR.status);
+      var ptD=await ptR.json();
+      var fUrl=ptD.properties&&ptD.properties.forecast;
+      if(!fUrl)throw new Error('No forecast URL from NWS');
+      var fR=await fetch(fUrl,
+        {headers:{'User-Agent':'B2FlatsStalker/1.0','Accept':'application/geo+json'}});
+      if(!fR.ok)throw new Error('NWS forecast HTTP '+fR.status);
+      var fD=await fR.json();
+      var periods=fD.properties&&fD.properties.periods;
+      if(!periods||periods.length<4)throw new Error('NWS: insufficient periods');
+
+      // Also fetch current conditions from NWS observation stations
+      var obsUrl=ptD.properties&&ptD.properties.observationStations;
+      if(obsUrl){
+        try{
+          var osR=await fetch(obsUrl,{headers:{'User-Agent':'B2FlatsStalker/1.0'}});
+          var osD=await osR.json();
+          var stationId=osD.features&&osD.features[0]&&osD.features[0].properties&&osD.features[0].properties.stationIdentifier;
+          if(stationId){
+            var obsR=await fetch('https://api.weather.gov/stations/'+stationId+'/observations/latest',
+              {headers:{'User-Agent':'B2FlatsStalker/1.0'}});
+            var obsD=await obsR.json();
+            var obs=obsD.properties;
+            if(obs){
+              if(obs.windSpeed&&obs.windSpeed.value!=null)
+                ST.windSpd=Math.round(obs.windSpeed.value*1.94384);
+              if(obs.windDirection&&obs.windDirection.value!=null)
+                ST.windDir=Math.round(obs.windDirection.value);
+              if(obs.windGust&&obs.windGust.value!=null)
+                ST.windGust=Math.round(obs.windGust.value*1.94384);
+              if(obs.barometricPressure&&obs.barometricPressure.value!=null)
+                ST.pressure=+(obs.barometricPressure.value*0.0002953).toFixed(2);
+              if(obs.temperature&&obs.temperature.value!=null)
+                ST.airTemp=Math.round(obs.temperature.value*9/5+32);
+            }
+          }
+        }catch(e){ /* obs optional */ }
+      }
+
+      // Parse NWS forecast periods into daily entries
+      var dirMap={N:0,NNE:22,NE:45,ENE:67,E:90,ESE:112,SE:135,
+        SSE:157,S:180,SSW:202,SW:225,WSW:247,W:270,WNW:292,NW:315,NNW:337};
+      var daily=[];
+      for(var i=0;i<periods.length&&daily.length<7;i++){
+        var p=periods[i];
+        if(!p.isDaytime)continue;
+        var night=periods[i+1]&&!periods[i+1].isDaytime?periods[i+1]:null;
+        var wMatch=p.windSpeed?p.windSpeed.match(/(\d+)/):null;
+        var wSpd=wMatch?Math.round(parseInt(wMatch[1])*0.868):10;
+        var wDirDeg=dirMap[p.windDirection||'SE']||135;
+        var sf=(p.shortForecast||'').toLowerCase();
+        var code=sf.includes('thunder')?95:
+          sf.includes('shower')||sf.includes('rain')?61:
+          sf.includes('drizzle')?51:sf.includes('fog')?45:
+          sf.includes('overcast')||sf.includes('mostly cloudy')?3:
+          sf.includes('partly')?1:0;
+        daily.push({
+          date:p.startTime?p.startTime.slice(0,10):'',
+          hi:p.temperature||82,
+          lo:night?night.temperature:70,
+          code:code,
+          windSpd:wSpd,
+          windDir:wDirDeg,
+          precip:'0.0',
+          nwsShort:p.shortForecast||'',
+          nwsDetail:p.detailedForecast||''
+        });
+      }
+      if(daily.length>=3){
+        ST.forecast=daily;
+        setSrc('srcWx','WEATHER: NWS/NOAA ✓','ok');
+        renderForecast();
+        return true;
+      }
+      throw new Error('NWS: not enough daily periods');
+    }catch(e){
+      console.warn('NWS failed, using Open-Meteo:',e.message);
+    }
+  }
+
+  // ── Fallback: Open-Meteo (international + NWS failure) ──
   try{
-    const r=await fetch(url);if(!r.ok)throw new Error('HTTP '+r.status);
-    const d=await r.json();const c=d.current;
-    ST.windSpd=Math.round(c.wind_speed_10m)||ST.windSpd;
-    ST.windDir=Math.round(c.wind_direction_10m)||ST.windDir;
-    ST.windGust=Math.round(c.wind_gusts_10m)||ST.windGust;
-    ST.airTemp=Math.round(c.temperature_2m)||ST.airTemp;
-    ST.pressure=+(c.surface_pressure*0.02953).toFixed(2);
-    ST.waveHt=c.wave_height?c.wave_height.toFixed(1):'0.5';
-    if(d.hourly&&d.hourly.surface_pressure)
-      ST.baroHist=d.hourly.surface_pressure.slice(0,12).map(p=>+(p*0.02953).toFixed(2));
-    const diff=ST.baroHist.length>2?ST.baroHist[ST.baroHist.length-1]-ST.baroHist[0]:0;
-    ST.pressureTrend=diff>.05?'rising':diff<-.05?'falling':'steady';
-    // Store 3-day forecast for display
+    var url='https://api.open-meteo.com/v1/forecast?latitude='+ST.lat.toFixed(4)+
+      '&longitude='+ST.lon.toFixed(4)+
+      '&current=temperature_2m,wind_speed_10m,wind_direction_10m,wind_gusts_10m,surface_pressure,weather_code'+
+      '&daily=weather_code,temperature_2m_max,temperature_2m_min,wind_speed_10m_max,'+
+      'wind_direction_10m_dominant,precipitation_sum,precipitation_probability_max,wind_gusts_10m_max'+
+      '&temperature_unit=fahrenheit&wind_speed_unit=kn&timezone=auto&forecast_days=7';
+    var r=await fetch(url);
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    var d=await r.json();
+    var cur=d.current;
+    if(cur){
+      ST.windSpd=Math.round(cur.wind_speed_10m)||ST.windSpd;
+      ST.windDir=Math.round(cur.wind_direction_10m)||ST.windDir;
+      ST.windGust=Math.round(cur.wind_gusts_10m)||ST.windGust;
+      ST.airTemp=Math.round(cur.temperature_2m)||ST.airTemp;
+      if(cur.surface_pressure)ST.pressure=+(cur.surface_pressure*0.02953).toFixed(2);
+    }
     if(d.daily){
       ST.forecast=d.daily.time.map(function(t,i){
         return{
@@ -1106,7 +1213,8 @@ async function fetchWeather(){
           code:d.daily.weather_code[i],
           windSpd:Math.round(d.daily.wind_speed_10m_max[i]),
           windDir:Math.round(d.daily.wind_direction_10m_dominant[i]),
-          precip:(d.daily.precipitation_sum[i]||0).toFixed(2)
+          precip:(d.daily.precipitation_sum[i]||0).toFixed(2),
+          nwsShort:''
         };
       });
     }
@@ -1115,11 +1223,6 @@ async function fetchWeather(){
     return true;
   }catch(e){
     setSrc('srcWx','WEATHER: COMPUTED','warn');
-    const mo=new Date().getMonth(),sum=mo>=5&&mo<=9;
-    ST.windSpd=sum?9:14;ST.windDir=sum?135:50;ST.windGust=ST.windSpd+5;
-    ST.airTemp=ST.lat>25?(sum?90:74):(sum?88:81);
-    ST.pressure=+(30.05+(Math.random()*.2-.1)).toFixed(2);ST.pressureTrend='steady';
-    ST.waveHt='0.7';ST.baroHist=Array.from({length:12},(_,i)=>ST.pressure+Math.sin(i*.4)*.07);
     return false;
   }
 }
@@ -1917,11 +2020,11 @@ function renderForecast(){
   }
   var labels=['Today','Tomorrow','Day 3'];
   grid.innerHTML=ST.forecast.slice(0,3).map(function(f,i){
-    return buildFcDay(labels[i],f.date,f.hi,f.lo,f.code,f.windSpd,f.windDir,f.precip,i);
+    return buildFcDay(labels[i],f.date,f.hi,f.lo,f.code,f.windSpd,f.windDir,f.precip,i,f.nwsShort||'');
   }).join('');
 }
 
-function buildFcDay(label,date,hi,lo,code,windSpd,windDir,precip,idx){
+function buildFcDay(label,date,hi,lo,code,windSpd,windDir,precip,idx,nwsText){
   var dateStr=date?new Date(date+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'}):label;
   var wCol=windSpd<10?'#00C875':windSpd<18?'#FFD700':'#E53E3E';
   var aRad=((windDir||0)*Math.PI/180);
@@ -1930,7 +2033,7 @@ function buildFcDay(label,date,hi,lo,code,windSpd,windDir,precip,idx){
   return '<div class="fc-day" onclick="openFcastModal()" style="cursor:pointer" title="Tap for 7-day forecast">'+
     '<div class="fc-date">'+label+'</div>'+
     '<div style="font-size:8px;color:var(--dim);font-family:Share Tech Mono,monospace;margin-bottom:2px">'+dateStr+'</div>'+
-    '<div class="fc-icon">'+wxIcon(code||0)+'</div>'+
+    '<div class="fc-icon">'+wxIcon(code||0)+'</div>'+'<div style="font-size:7px;color:var(--txt);font-family:Rajdhani,sans-serif;font-weight:700;margin:1px 0;line-height:1.2;min-height:14px">'+(nwsText||wxDesc(code||0))+'</div>'+
     '<div class="fc-temps" style="margin-top:2px"><span style="color:var(--red);font-weight:900">'+hi+'°</span> <span style="color:var(--dim);font-size:10px">/</span> <span style="color:var(--cyan);font-weight:700">'+lo+'°</span></div>'+
     '<div style="font-size:8px;color:var(--dim);font-family:Share Tech Mono,monospace;margin-top:2px">☔ '+(precip||0)+'"</div>'+
     '<div style="margin-top:4px;display:flex;flex-direction:column;align-items:center">'+
