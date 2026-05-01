@@ -1,0 +1,2314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#000000">
+<title>B2 Flats Stalker</title>
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Share+Tech+Mono&family=Rajdhani:wght@600;700&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+
+/* ── THEME VARIABLES ── */
+body.dark{
+  --bg:#000;--bg2:#0d0d0d;--bg3:#161616;--bg4:#1e1e1e;
+  --bdr:#333;--bdr2:#444;--wht:#FFF;--txt:#FFF;--dim:#888;
+  --card-bg:#0d0d0d;--panel-bg:#0d0d0d;--input-bg:#161616;
+}
+body.light{
+  --bg:#F0F4F8;--bg2:#FFFFFF;--bg3:#E8EDF2;--bg4:#DDE3EA;
+  --bdr:#CBD5E0;--bdr2:#A0AEC0;--wht:#1A202C;--txt:#1A202C;--dim:#4A5568;
+  --card-bg:#FFFFFF;--panel-bg:#FFFFFF;--input-bg:#EDF2F7;
+}
+:root{
+  --gold:#FFD700;--cyan:#00B4CC;--grn:#00C875;
+  --red:#E53E3E;--org:#DD6B20;--pur:#9F7AEA;
+}
+body.light{--cyan:#0077AA;--grn:#276749;--gold:#B7791F}
+
+html,body{background:var(--bg);color:var(--txt);font-family:'Rajdhani',sans-serif;overflow-x:hidden;transition:background .3s,color .3s}
+.app{max-width:1400px;margin:0 auto;padding:5px}
+
+/* ── THEME TOGGLE ── */
+.theme-toggle{display:flex;align-items:center;gap:6px;cursor:pointer;padding:4px 10px;border-radius:20px;border:2px solid var(--bdr2);background:var(--bg3);transition:all .2s}
+.theme-toggle:hover{border-color:var(--gold)}
+.toggle-track{width:36px;height:20px;border-radius:10px;background:var(--bdr2);position:relative;transition:background .3s}
+body.light .toggle-track{background:var(--gold)}
+.toggle-thumb{position:absolute;top:3px;left:3px;width:14px;height:14px;border-radius:50%;background:#fff;transition:transform .3s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+body.light .toggle-thumb{transform:translateX(16px)}
+.toggle-label{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--dim);letter-spacing:1px;font-weight:700}
+
+/* ── HEADER ── */
+.hdr{display:flex;align-items:center;justify-content:space-between;padding:5px 8px;background:var(--bg2);border:2px solid var(--gold);border-radius:8px;margin-bottom:5px;gap:10px;flex-wrap:wrap}
+.logo-wrap{display:flex;align-items:center;gap:12px;flex-shrink:0}
+.t1{font-family:'Orbitron',monospace;font-size:clamp(12px,3.8vw,18px);font-weight:900;color:var(--gold);letter-spacing:clamp(1px,0.5vw,3px);line-height:1.1}
+.t2{font-family:'Share Tech Mono',monospace;font-size:clamp(7px,1.8vw,9px);color:var(--cyan);letter-spacing:3px;margin-top:2px}
+.hdr-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0}
+.clk{font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--txt);font-weight:700}
+.live-pill{background:var(--bg3);border:2px solid var(--grn);color:var(--grn);font-family:'Share Tech Mono',monospace;font-size:10px;padding:2px 8px;border-radius:4px;letter-spacing:1px;font-weight:700}
+.dot{display:inline-block;width:6px;height:6px;background:var(--grn);border-radius:50%;animation:blink 1.5s infinite;margin-right:4px;vertical-align:middle}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.05}}
+.rbtn{background:transparent;border:2px solid var(--gold);color:var(--gold);font-family:'Share Tech Mono',monospace;font-size:10px;padding:3px 10px;border-radius:4px;cursor:pointer;font-weight:700}
+.rbtn:hover{background:var(--gold);color:#000}
+
+/* ── ALERTS ── */
+.alerts{display:flex;gap:5px;align-items:center;padding:5px 10px;background:var(--bg2);border:2px solid var(--bdr);border-radius:6px;margin-bottom:5px;overflow-x:auto;white-space:nowrap}
+.al{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--txt);font-weight:700}
+.alsep{color:var(--bdr2);font-size:12px;margin:0 3px;flex-shrink:0}
+
+/* ── SOURCE STATUS ── */
+.src-row{display:flex;gap:5px;align-items:center;padding:4px 10px;background:var(--bg3);border:1px solid var(--bdr);border-radius:5px;margin-bottom:5px;flex-wrap:wrap}
+.sb{padding:2px 8px;border-radius:10px;font-size:9px;font-family:'Share Tech Mono',monospace;font-weight:700;border:1px solid;letter-spacing:.5px}
+.sb-ok{background:rgba(0,200,117,.1);color:var(--grn);border-color:var(--grn)}
+.sb-warn{background:rgba(183,121,31,.1);color:var(--gold);border-color:var(--gold)}
+.sb-err{background:rgba(229,62,62,.1);color:var(--red);border-color:var(--red)}
+.src-info{font-size:9px;color:var(--dim);font-family:'Share Tech Mono',monospace;margin-left:auto}
+
+/* ── TIDE TYPE BADGE ── */
+.tide-type-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:12px;font-family:'Share Tech Mono',monospace;font-size:9px;font-weight:700;letter-spacing:1px;border:1px solid}
+.ttb-diurnal{background:rgba(159,122,234,.1);color:var(--pur);border-color:var(--pur)}
+.ttb-semi{background:rgba(0,180,204,.1);color:var(--cyan);border-color:var(--cyan)}
+.ttb-mixed{background:rgba(221,107,32,.1);color:var(--org);border-color:var(--org)}
+
+/* ── SUN BANNER ── */
+.sun-banner{display:flex;align-items:center;justify-content:space-between;padding:5px 10px;background:var(--bg3);border:2px solid var(--bdr2);border-radius:6px;margin-bottom:5px;flex-wrap:wrap;gap:6px}
+.sun-ind{font-family:'Orbitron',monospace;font-size:10px;font-weight:700;letter-spacing:2px}
+
+/* ── SPECIES ── */
+.sg{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-bottom:5px}
+.sc{border-radius:6px;padding:10px 12px;border:2px solid;position:relative;overflow:hidden;background:var(--bg2)}
+.sc::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.sc.tp{border-color:var(--grn)}.sc.tp::before{background:var(--grn)}
+.sc.pm{border-color:var(--pur)}.sc.pm::before{background:var(--pur)}
+.sc.bf{border-color:var(--cyan)}.sc.bf::before{background:var(--cyan)}
+body.dark .sc.tp{background:#001a06}
+body.dark .sc.pm{background:#0d0019}
+body.dark .sc.bf{background:#000d1a}
+.sn{font-family:'Orbitron',monospace;font-size:9px;font-weight:700;letter-spacing:2px;margin-bottom:4px}
+.sc.tp .sn{color:var(--grn)}.sc.pm .sn{color:var(--pur)}.sc.bf .sn{color:var(--cyan)}
+.ws{font-family:'Orbitron',monospace;font-size:26px;font-weight:900;line-height:1;color:var(--txt)}
+.wl{font-size:10px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-top:2px;font-family:'Share Tech Mono',monospace}
+.wb{height:4px;background:var(--bg4);border-radius:2px;margin:5px 0;border:1px solid var(--bdr)}
+.wf{height:4px;border-radius:2px;transition:width .5s}
+.sc.tp .wf{background:var(--grn)}.sc.pm .wf{background:var(--pur)}.sc.bf .wf{background:var(--cyan)}
+.tags{display:flex;flex-wrap:wrap;gap:3px;margin-top:4px}
+.tag{font-size:9px;padding:2px 5px;border-radius:3px;font-family:'Share Tech Mono',monospace;font-weight:700;border:1px solid}
+.tg{background:rgba(0,200,117,.15);color:var(--grn);border-color:var(--grn)}
+.ty{background:rgba(183,121,31,.15);color:var(--gold);border-color:var(--gold)}
+.tr{background:rgba(229,62,62,.15);color:var(--red);border-color:var(--red)}
+.tb{background:rgba(0,180,204,.15);color:var(--cyan);border-color:var(--cyan)}
+.tp2{background:rgba(159,122,234,.15);color:var(--pur);border-color:var(--pur)}
+.sc-det{margin-top:5px;font-size:9px;font-family:'Share Tech Mono',monospace;color:var(--dim);line-height:1.4}
+
+/* ── PANELS ── */
+.mg{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px}
+.panel{background:var(--bg2);border:2px solid var(--bdr);border-radius:6px;padding:10px 12px}
+.pt{font-family:'Orbitron',monospace;font-size:8px;font-weight:700;color:var(--gold);letter-spacing:2px;margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid var(--bdr2)}
+.span2{grid-column:span 2}
+
+/* ── MAP ── */
+.map-wrap{position:relative;border-radius:6px;overflow:hidden;border:2px solid var(--bdr2)}
+#map{height:270px;width:100%;background:#a8d4f5}
+.map-ctrls{position:absolute;top:8px;left:8px;z-index:1000;display:flex;flex-direction:column;gap:4px}
+.mbtn{background:rgba(0,0,0,.88);border:2px solid var(--gold);color:var(--gold);font-family:'Share Tech Mono',monospace;font-size:10px;padding:5px 10px;border-radius:5px;cursor:pointer;font-weight:700;letter-spacing:.5px;white-space:nowrap;transition:all .15s}
+.mbtn:hover{background:var(--gold);color:#000}
+.mbtn.gps-on{background:#003300;border-color:var(--grn);color:var(--grn)}
+.map-bar{position:absolute;bottom:8px;left:8px;right:80px;z-index:1000;background:rgba(0,0,0,.88);border:1px solid var(--bdr2);border-radius:5px;padding:5px 10px;font-family:'Share Tech Mono',monospace;font-size:9px;color:#00E5FF;line-height:1.5}
+.map-depth{position:absolute;top:8px;right:8px;z-index:1000;background:rgba(0,0,0,.92);border:2px solid #00E5FF;border-radius:5px;padding:5px 10px;text-align:center;min-width:72px}
+.dv{font-family:'Orbitron',monospace;font-size:18px;color:#00E5FF;font-weight:900;line-height:1}
+.dl{font-size:8px;color:#00E5FF;letter-spacing:2px}
+.leaflet-container{background:#a8d4f5!important}
+.leaflet-control-zoom a{background:rgba(0,0,0,.85)!important;color:var(--gold)!important;border-color:#444!important;font-weight:700!important}
+.leaflet-control-zoom a:hover{background:var(--gold)!important;color:#000!important}
+.leaflet-control-attribution{background:rgba(0,0,0,.7)!important;color:#999!important;font-size:8px!important}
+.leaflet-popup-content-wrapper{background:#0d0d0d!important;border:1px solid var(--gold)!important;color:#fff!important;font-family:'Share Tech Mono',monospace!important;font-size:10px!important;border-radius:6px!important}
+.leaflet-popup-tip{background:#0d0d0d!important}
+.leaflet-control-layers{background:rgba(0,0,0,.9)!important;border:2px solid var(--gold)!important;color:#fff!important;border-radius:6px!important;font-family:'Share Tech Mono',monospace!important;font-size:10px!important}
+.leaflet-control-layers label{color:#fff!important;font-family:'Share Tech Mono',monospace!important;font-size:10px!important;cursor:pointer}
+
+/* ── STATION / TIDE INFO ── */
+.stn-box{background:var(--bg3);border:1px solid var(--bdr);border-radius:4px;padding:5px 8px;margin-top:5px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px}
+.stn-name{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--cyan);font-weight:700}
+.stn-dist{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--dim)}
+.tide-stats{display:flex;gap:4px;margin-top:6px}
+.tstat{flex:1;text-align:center;background:var(--bg3);border:1px solid var(--bdr);border-radius:4px;padding:4px 2px}
+.tsv{font-family:'Orbitron',monospace;font-size:12px;color:var(--txt);font-weight:700}
+.tsl{font-size:8px;color:var(--dim);letter-spacing:1px;font-family:'Share Tech Mono',monospace;margin-top:1px}
+
+/* ── WIND ── */
+.wind-row{display:flex;align-items:center;gap:12px}
+.wsb{font-family:'Orbitron',monospace;font-size:36px;font-weight:900;line-height:1;color:var(--txt)}
+.lp{display:flex;align-items:center;gap:8px;padding:5px 9px;border-radius:4px;margin-top:6px;border:2px solid}
+.lp-ok{background:rgba(0,200,117,.08);border-color:var(--grn)}
+.lp-warn{background:rgba(221,107,32,.08);border-color:var(--org)}
+.lp-danger{background:rgba(229,62,62,.08);border-color:var(--red);animation:pulse .8s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* ── TEMP ── */
+.temp-big{font-family:'Orbitron',monospace;font-size:36px;font-weight:900;line-height:1;color:var(--txt)}
+.tst{padding:3px 8px;border-radius:3px;font-size:10px;font-weight:700;letter-spacing:1px;margin-top:4px;display:inline-block;font-family:'Share Tech Mono',monospace;border:2px solid}
+.tbar{height:10px;border-radius:5px;background:linear-gradient(90deg,#0055FF 0%,#00AAFF 26%,#00C875 42%,#00C875 62%,#FFD700 72%,#E53E3E 100%);position:relative;margin:8px 0 3px;border:1px solid var(--bdr2)}
+.tneedle{position:absolute;top:-5px;width:3px;height:20px;background:var(--txt);border-radius:2px;transform:translateX(-50%)}
+.mbox{background:var(--bg3);border:1px solid var(--bdr);border-radius:4px;padding:5px 8px;text-align:center}
+.mbox-v{font-family:'Orbitron',monospace;font-size:14px;color:var(--txt);font-weight:900;line-height:1}
+.mbox-l{font-size:8px;color:var(--dim);letter-spacing:1px;font-family:'Share Tech Mono',monospace;margin-top:2px}
+
+/* ── PRESSURE ── */
+.pres-row{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+.pres-val{font-family:'Orbitron',monospace;font-size:18px;color:var(--txt);font-weight:900}
+.pres-tr{font-size:30px;font-weight:900}
+.rising{color:var(--grn)}.steady{color:var(--gold)}.falling{color:var(--red)}
+.pres-adv{font-size:9px;color:var(--dim);font-family:'Share Tech Mono',monospace;line-height:1.5;padding:4px 6px;background:var(--bg3);border:1px solid var(--bdr);border-radius:4px}
+
+/* ── SOLUNAR ── */
+.sol-item{display:flex;align-items:center;justify-content:space-between;padding:4px 7px;border-radius:4px;background:var(--bg3);border:1px solid var(--bdr);margin-bottom:3px}
+.sol-time{font-family:'Orbitron',monospace;font-size:12px;color:var(--txt);font-weight:700}
+.sol-type{font-size:8px;color:var(--dim);letter-spacing:2px;font-family:'Share Tech Mono',monospace;font-weight:700}
+.sol-badge{font-size:9px;padding:2px 6px;border-radius:3px;font-weight:700;font-family:'Share Tech Mono',monospace}
+.smaj{background:rgba(183,121,31,.15);color:var(--gold);border:1px solid var(--gold)}
+.smin{background:rgba(0,180,204,.1);color:var(--cyan);border:1px solid var(--cyan)}
+.lunar-row{display:flex;align-items:center;gap:10px;margin-top:8px;padding-top:8px;border-top:1px solid var(--bdr2)}
+
+/* ── SPOTS ── */
+.spot-card{padding:6px 9px;background:var(--bg3);border-radius:5px;margin-bottom:4px;border-left:3px solid}
+.spot-card.prime{border-left-color:var(--gold)}.spot-card.hot{border-left-color:var(--grn)}.spot-card.check{border-left-color:var(--cyan)}
+.spot-name{font-size:11px;color:var(--txt);font-family:'Rajdhani',sans-serif;font-weight:700}
+.spot-depth{font-size:9px;font-family:'Share Tech Mono',monospace;color:var(--cyan);font-weight:700;margin-top:1px}
+.spot-det{font-size:9px;color:var(--dim);font-family:'Share Tech Mono',monospace;margin-top:2px;line-height:1.4}
+.spot-badges{display:flex;gap:3px;margin-top:3px;flex-wrap:wrap}
+
+/* ── AMENITIES ── */
+.amen-card{padding:5px 8px;background:var(--bg3);border-radius:4px;margin-bottom:3px;display:flex;align-items:flex-start;gap:8px;border-left:2px solid var(--bdr2)}
+.amen-card.ramp{border-left-color:#4FC3F7}
+.amen-card.fuel{border-left-color:#FFB300}
+.amen-card.bar{border-left-color:#F06292}
+.amen-name{font-size:10px;color:var(--txt);font-family:'Rajdhani',sans-serif;font-weight:700}
+.amen-detail{font-size:8px;color:var(--dim);font-family:'Share Tech Mono',monospace;line-height:1.4}
+
+/* ── FLY MATRIX ── */
+.fly-cond{background:var(--bg3);border:1px solid var(--bdr);border-radius:4px;padding:6px 8px;margin-bottom:4px}
+.fly-cond-title{font-family:'Orbitron',monospace;font-size:8px;font-weight:700;color:var(--gold);letter-spacing:2px;margin-bottom:5px}
+.fly-row{display:flex;align-items:flex-start;gap:6px;margin-bottom:4px;padding:3px 5px;border-radius:3px}
+.fly-row.best{background:rgba(183,121,31,.08);border:1px solid rgba(183,121,31,.3)}
+.fly-sw{width:13px;height:13px;border-radius:2px;flex-shrink:0;border:1px solid rgba(128,128,128,.4);margin-top:1px}
+.fly-nm{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--txt);font-weight:700;flex:1.2;line-height:1.3}
+.fly-why{font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--dim);flex:2;line-height:1.3}
+
+/* ── RADAR ── */
+.radar-wrap{height:110px;background:#000;border-radius:4px;border:1px solid var(--bdr);position:relative;overflow:hidden}
+.radar-sweep{position:absolute;width:50%;height:1px;top:50%;left:50%;background:linear-gradient(90deg,transparent,rgba(0,255,0,.9));transform-origin:left center;animation:sweep 3s linear infinite}
+@keyframes sweep{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+
+/* ── GPS ── */
+.gps-pulse{width:18px;height:18px;border-radius:50%;background:var(--grn);border:3px solid #fff;animation:gpspulse 2s infinite}
+@keyframes gpspulse{0%{box-shadow:0 0 0 0 rgba(0,200,117,.7)}70%{box-shadow:0 0 0 12px rgba(0,200,117,0)}100%{box-shadow:0 0 0 0 rgba(0,200,117,0)}}
+.pin-dot{width:16px;height:16px;border-radius:50%;background:var(--gold);border:3px solid #111;box-shadow:0 0 10px rgba(255,215,0,.8)}
+
+/* ── BOTTOM GRID ── */
+.bg{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-top:5px}
+
+/* ── RESPONSIVE ── */
+@media(max-width:900px){.mg,.sg,.bg{grid-template-columns:1fr 1fr}.span2{grid-column:span 2}}
+@media(max-width:600px){.mg,.sg,.bg{grid-template-columns:1fr}.span2{grid-column:span 1}.tide-stats{flex-wrap:wrap}.tstat{min-width:55px}}
+
+/* ── FORECAST CARDS ── */
+.fc-day{background:var(--bg3);border:1px solid var(--bdr);border-radius:5px;padding:6px 4px;text-align:center;cursor:pointer;transition:opacity .15s}
+.fc-day:active{opacity:.7}
+.fc-date{font-size:9px;color:var(--gold);font-family:Share Tech Mono,monospace;font-weight:700;margin-bottom:3px}
+.fc-icon{font-size:22px;line-height:1;margin-bottom:3px}
+.fc-temps{font-family:Orbitron,sans-serif;font-size:11px;font-weight:700;color:var(--txt)}
+
+/* ── BRIEF STRIP ── */
+.brief-strip{display:grid;grid-template-columns:repeat(5,1fr);gap:3px;margin-bottom:4px}
+.brief-cell{background:var(--bg2);border:1px solid var(--bdr);border-radius:5px;padding:5px 2px;text-align:center}
+.brief-val{font-family:'Orbitron',monospace;font-size:clamp(13px,3.8vw,18px);font-weight:900;color:var(--txt);line-height:1}
+.brief-lbl{font-size:7px;color:var(--dim);font-family:'Share Tech Mono',monospace;letter-spacing:.3px;margin-top:2px}
+.brief-sub{font-size:8px;font-family:'Share Tech Mono',monospace;margin-top:1px;font-weight:700}
+/* ── BUTTONS ── */
+.btn{background:transparent;border:2px solid var(--gold);color:var(--gold);font-family:'Share Tech Mono',monospace;font-size:10px;padding:5px 9px;border-radius:4px;cursor:pointer;font-weight:700;min-height:36px;touch-action:manipulation}
+.btn:active{background:var(--gold);color:#000}
+/* ── CLAMP FIXES ── */
+.clk{font-family:'Share Tech Mono',monospace;font-size:clamp(8px,2.2vw,11px);color:var(--txt);font-weight:700;white-space:nowrap}
+
+</style>
+</head>
+<body class="dark">
+<div class="app">
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="logo-wrap">
+    <svg width="42" height="42" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+      <defs><radialGradient id="hbg" cx="50%" cy="42%" r="58%"><stop offset="0%" stop-color="#003166"/><stop offset="100%" stop-color="#000"/></radialGradient></defs>
+      <circle cx="100" cy="100" r="98" fill="#FFD700"/>
+      <circle cx="100" cy="100" r="93" fill="#000"/>
+      <circle cx="100" cy="100" r="88" fill="#CC9900"/>
+      <circle cx="100" cy="100" r="82" fill="url(#hbg)"/>
+      <circle cx="100" cy="100" r="74" fill="none" stroke="#FFD700" stroke-width="1"/>
+      <g id="htk"></g>
+      <path id="hTA" d="M 24,100 A 76,76 0 0,1 176,100" fill="none"/>
+      <text font-family="Orbitron,monospace" font-size="10" font-weight="900" fill="#FFD700" letter-spacing="4"><textPath href="#hTA" startOffset="50%" text-anchor="middle">FLATS STALKER</textPath></text>
+      <path id="hBA" d="M 32,115 A 68,68 0 0,0 168,115" fill="none"/>
+      <text font-family="Rajdhani,sans-serif" font-size="8" font-weight="700" fill="#FFD700" letter-spacing="2" opacity="0.7"><textPath href="#hBA" startOffset="50%" text-anchor="middle">FL KEYS · PINE ISLAND</textPath></text>
+      <text x="100" y="122" text-anchor="middle" font-family="Orbitron,monospace" font-size="58" font-weight="900" fill="#FFF">B2</text>
+      <line x1="22" y1="100" x2="50" y2="100" stroke="#FFD700" stroke-width="1.5"/>
+      <line x1="150" y1="100" x2="178" y2="100" stroke="#FFD700" stroke-width="1.5"/>
+      <polygon points="50,100 57,96 59,100 57,104" fill="#FFD700"/>
+      <polygon points="150,100 143,96 141,100 143,104" fill="#FFD700"/>
+      <polygon points="100,4 104,11 100,17 96,11" fill="#FFD700"/>
+      <polygon points="100,183 104,190 100,196 96,190" fill="#FFD700"/>
+    </svg>
+    <div><div class="t1">B2 FLATS STALKER</div><div class="t2">◈ SIGHT-FISHING INTELLIGENCE SYSTEM ◈</div></div>
+  </div>
+  <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+    <!-- THEME TOGGLE -->
+    <div class="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark theme">
+      <span style="font-size:14px" id="themeIcon">🌙</span>
+      <div class="toggle-track"><div class="toggle-thumb"></div></div>
+      <span class="toggle-label" id="themeLabel">DARK</span>
+    </div>
+    <div class="hdr-right">
+      <div class="clk" id="clk">---</div>
+      <div class="live-pill"><span class="dot"></span>LIVE DATA</div>
+      <button class="rbtn" onclick="go()">↺ REFRESH</button>
+    </div>
+  </div>
+</div>
+
+<!-- BRIEFING STRIP — 5 cells -->
+<div class="brief-strip">
+
+  <div class="brief-cell" style="border-top:2px solid var(--cyan)">
+    <div class="brief-lbl">TIDE</div>
+    <div class="brief-val" style="color:var(--cyan)" id="bTide">--</div>
+    <div class="brief-sub" id="bTidePhase" style="color:var(--cyan)">--</div>
+    <div class="brief-sub" style="color:var(--dim)" id="bTideFlow">--</div>
+  </div>
+
+  <div class="brief-cell" style="border-top:2px solid var(--grn)">
+    <div class="brief-lbl" style="color:var(--grn)">NEXT HI</div>
+    <div class="brief-val" style="color:var(--grn);font-size:clamp(12px,3.5vw,16px)" id="bNextHi">--</div>
+    <div class="brief-sub" style="color:var(--dim)">⬆ HIGH</div>
+  </div>
+
+  <div class="brief-cell" style="border-top:2px solid #00AACC">
+    <div class="brief-lbl" style="color:#00AACC">NEXT LO</div>
+    <div class="brief-val" style="color:#00AACC;font-size:clamp(12px,3.5vw,16px)" id="bNextLo">--</div>
+    <div class="brief-sub" style="color:var(--dim)">⬇ LOW</div>
+  </div>
+
+  <div class="brief-cell" style="border-top:2px solid var(--grn)">
+    <div class="brief-lbl">WATER</div>
+    <div class="brief-val" style="color:var(--grn)" id="bWater">--°</div>
+    <div class="brief-sub" id="bWaterStatus">--</div>
+  </div>
+
+  <div class="brief-cell" style="border-top:2px solid var(--gold)">
+    <div class="brief-lbl">WIND kts</div>
+    <div class="brief-val" style="color:var(--gold)" id="bWind">--</div>
+    <div class="brief-sub" id="bWindDir">--</div>
+    <div class="brief-sub" style="color:var(--dim)" id="bWindGust">G:--</div>
+  </div>
+
+</div>
+<!-- Hidden moon IDs referenced in JS -->
+<span id="bMoon" style="display:none"></span>
+<span id="bMoonPh" style="display:none"></span>
+
+
+
+<!-- ALERT BAR -->
+<div class="alerts" role="status">
+  <span class="dot"></span>
+  <span class="al" id="alT">TIDE: --</span><span class="alsep">|</span>
+  <span class="al" id="alW" style="color:var(--cyan)">WATER: --°F</span><span class="alsep">|</span>
+  <span class="al" id="alWn">WIND: --</span><span class="alsep">|</span>
+  <span class="al" id="alB">BARO: --</span><span class="alsep">|</span>
+  <span class="al" id="alM" style="color:var(--gold)">MOON: --</span><span class="alsep">|</span>
+  <span class="al" id="alS" style="color:var(--gold)">NEXT MAJOR: --</span><span class="alsep">|</span>
+  <span class="al" id="alD" style="color:var(--cyan)">DEPTH: --</span><span class="alsep">|</span>
+  <span class="al" id="alGPS" style="color:var(--grn)">GPS: --</span>
+</div>
+
+<!-- SOURCE STATUS -->
+<div class="src-row">
+  <div class="sb sb-warn" id="srcWx">WEATHER: --</div>
+  <div class="sb sb-warn" id="srcTide">TIDE: --</div>
+  <div class="sb sb-warn" id="srcTemp">WATER TEMP: --</div>
+  <div class="sb sb-warn" id="srcLunar">LUNAR: --</div>
+  <div class="src-info" id="srcInfo">Select a location on the map</div>
+</div>
+
+<!-- SUN BANNER + PALOLO INDICATOR -->
+<div style="display:grid;grid-template-columns:1fr auto;gap:5px;margin-bottom:5px">
+<div class="sun-banner" style="margin-bottom:0">
+  <div>
+    <div class="sun-ind" id="sunInd" style="color:var(--gold)">◈ READING CONDITIONS...</div>
+    <div style="font-size:9px;color:var(--dim);font-family:'Share Tech Mono',monospace;margin-top:2px" id="sunDesc">Calculating light · clarity · wind</div>
+  </div>
+  <span id="sunFly" style="display:none"></span>
+</div>
+<!-- PALOLO WORM INDICATOR -->
+<div id="paloloPanel" style="background:var(--bg2);border:2px solid var(--bdr2);border-radius:6px;padding:8px 12px;text-align:center;min-width:140px;cursor:pointer;transition:all .3s" onclick="showPaloloDetail()">
+  <div style="font-size:22px;margin-bottom:3px;filter:grayscale(1)" id="paloloIcon">🪱</div>
+  <div style="font-family:'Orbitron',monospace;font-size:8px;font-weight:700;letter-spacing:1px;color:var(--dim)" id="paloloLabel">PALOLO WORM</div>
+  <div style="font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--dim);margin-top:2px" id="paloloStatus">MONITORING</div>
+  <div style="font-family:'Orbitron',monospace;font-size:11px;font-weight:900;margin-top:3px" id="paloloPct">--%</div>
+</div>
+</div>
+
+<!-- PALOLO DETAIL PANEL (hidden by default) -->
+<div id="paloloDetail" style="display:none;background:var(--bg2);border:2px solid var(--org);border-radius:8px;padding:12px 14px;margin-bottom:5px">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+    <div style="font-family:'Orbitron',monospace;font-size:11px;font-weight:900;color:var(--org);letter-spacing:2px">🪱 PALOLO WORM HATCH PREDICTOR</div>
+    <button onclick="document.getElementById('paloloDetail').style.display='none'" style="background:transparent;border:1px solid var(--bdr2);color:var(--dim);font-family:'Share Tech Mono',monospace;font-size:9px;padding:2px 8px;border-radius:3px;cursor:pointer">CLOSE</button>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:8px">
+    <div style="background:var(--bg3);border:1px solid var(--bdr);border-radius:4px;padding:6px 8px;text-align:center">
+      <div style="font-size:8px;color:var(--dim);font-family:'Share Tech Mono',monospace;letter-spacing:1px">DATE WINDOW</div>
+      <div style="font-family:'Orbitron',monospace;font-size:12px;color:var(--txt);font-weight:700;margin-top:3px" id="pDateScore">--</div>
+      <div style="font-size:8px;color:var(--dim);font-family:'Share Tech Mono',monospace;margin-top:2px">May 15 – Jun 20</div>
+    </div>
+    <div style="background:var(--bg3);border:1px solid var(--bdr);border-radius:4px;padding:6px 8px;text-align:center">
+      <div style="font-size:8px;color:var(--dim);font-family:'Share Tech Mono',monospace;letter-spacing:1px">LUNAR PHASE</div>
+      <div style="font-family:'Orbitron',monospace;font-size:12px;color:var(--txt);font-weight:700;margin-top:3px" id="pLunarScore">--</div>
+      <div style="font-size:8px;color:var(--dim);font-family:'Share Tech Mono',monospace;margin-top:2px" id="pLunarNote">Full/New ±3 days</div>
+    </div>
+    <div style="background:var(--bg3);border:1px solid var(--bdr);border-radius:4px;padding:6px 8px;text-align:center">
+      <div style="font-size:8px;color:var(--dim);font-family:'Share Tech Mono',monospace;letter-spacing:1px">TIDE WINDOW</div>
+      <div style="font-family:'Orbitron',monospace;font-size:12px;color:var(--txt);font-weight:700;margin-top:3px" id="pTideScore">--</div>
+      <div style="font-size:8px;color:var(--dim);font-family:'Share Tech Mono',monospace;margin-top:2px">Falling 5–8:30pm</div>
+    </div>
+  </div>
+  <div style="background:var(--bg3);border:1px solid var(--bdr);border-radius:4px;padding:7px 10px;margin-bottom:8px">
+    <div style="font-size:9px;color:var(--org);font-family:'Share Tech Mono',monospace;font-weight:700;margin-bottom:3px">CONDITIONS SUMMARY</div>
+    <div style="font-size:9px;color:var(--dim);font-family:'Share Tech Mono',monospace;line-height:1.6" id="paloloSummary">Loading palolo conditions...</div>
+  </div>
+  <!-- HATCH HOTSPOTS MAP -->
+  <div style="font-family:'Orbitron',monospace;font-size:8px;color:var(--gold);letter-spacing:2px;margin-bottom:5px">◈ PALOLO HATCH HOTSPOTS — FLORIDA KEYS</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:8px">
+    <a href="https://www.google.com/maps/search/Bahia+Honda+Bridge+Florida+Keys" target="_blank" style="text-decoration:none">
+      <div style="background:var(--bg3);border:1px solid rgba(255,140,0,.4);border-radius:4px;padding:5px 8px;cursor:pointer" onmouseover="this.style.borderColor='var(--org)'" onmouseout="this.style.borderColor='rgba(255,140,0,.4)'">
+        <div style="font-size:10px;color:var(--org);font-family:'Rajdhani',sans-serif;font-weight:700">🌊 Bahia Honda Bridge</div>
+        <div style="font-size:8px;color:var(--dim);font-family:'Share Tech Mono',monospace">Most famous hatch site · MM 37</div>
+      </div>
+    </a>
+    <a href="https://www.google.com/maps/search/Channel+2+Florida+Keys" target="_blank" style="text-decoration:none">
+      <div style="background:var(--bg3);border:1px solid rgba(255,140,0,.4);border-radius:4px;padding:5px 8px;cursor:pointer" onmouseover="this.style.borderColor='var(--org)'" onmouseout="this.style.borderColor='rgba(255,140,0,.4)'">
+        <div style="font-size:10px;color:var(--org);font-family:'Rajdhani',sans-serif;font-weight:700">🌊 Channel 2 Bridge</div>
+        <div style="font-size:8px;color:var(--dim);font-family:'Share Tech Mono',monospace">Upper Keys hotspot · MM 73</div>
+      </div>
+    </a>
+    <a href="https://www.google.com/maps/search/Channel+5+Bridge+Florida+Keys" target="_blank" style="text-decoration:none">
+      <div style="background:var(--bg3);border:1px solid rgba(255,140,0,.4);border-radius:4px;padding:5px 8px;cursor:pointer" onmouseover="this.style.borderColor='var(--org)'" onmouseout="this.style.borderColor='rgba(255,140,0,.4)'">
+        <div style="font-size:10px;color:var(--org);font-family:'Rajdhani',sans-serif;font-weight:700">🌊 Channel 5 Bridge</div>
+        <div style="font-size:8px;color:var(--dim);font-family:'Share Tech Mono',monospace">Long Key area · MM 71</div>
+      </div>
+    </a>
+    <a href="https://www.google.com/maps/search/Long+Key+Bridge+Florida+Keys" target="_blank" style="text-decoration:none">
+      <div style="background:var(--bg3);border:1px solid rgba(255,140,0,.4);border-radius:4px;padding:5px 8px;cursor:pointer" onmouseover="this.style.borderColor='var(--org)'" onmouseout="this.style.borderColor='rgba(255,140,0,.4)'">
+        <div style="font-size:10px;color:var(--org);font-family:'Rajdhani',sans-serif;font-weight:700">🌊 Long Key Bridge</div>
+        <div style="font-size:8px;color:var(--dim);font-family:'Share Tech Mono',monospace">Classic oceanside flat · MM 65</div>
+      </div>
+    </a>
+  </div>
+  <div style="display:flex;gap:6px;align-items:center">
+    <button onclick="reportWormSpotted()" style="flex:1;padding:7px;background:rgba(255,140,0,.15);border:2px solid var(--org);color:var(--org);font-family:'Orbitron',monospace;font-size:9px;font-weight:700;letter-spacing:1px;border-radius:5px;cursor:pointer">🪱 WORMS SPOTTED — REPORT</button>
+    <div style="font-size:8px;color:var(--dim);font-family:'Share Tech Mono',monospace;text-align:right;line-height:1.4" id="paloloReports">No reports<br>in last 24hr</div>
+  </div>
+</div>
+
+
+<!-- MAIN GRID -->
+<div class="mg">
+  <!-- MAP -->
+  <div class="panel span2">
+    <div class="pt">◈ LIVE MAP — TAP ANY LOCATION · SCROLL &amp; ZOOM · GPS · 15mi RADAR RING</div>
+    <div class="map-wrap">
+      <div id="map"></div>
+      <canvas id="windOverlay" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:500;display:block;border-radius:6px"></canvas>
+      <div class="map-ctrls">
+        <button class="mbtn" id="gpsBtn" onclick="startGPS()">📍 MY LOCATION</button>
+        <button class="mbtn" onclick="jumpTo(24.6450,-81.5333,11)">🎯 FL KEYS</button>
+        <button class="mbtn" onclick="jumpTo(26.5610,-82.1910,9)">🎯 PINE IS.</button>
+      </div>
+      <div class="map-bar" id="mapBar">TAP MAP TO SELECT LOCATION · DRAG TO SCROLL · SCROLL/PINCH TO ZOOM</div>
+      <div class="map-depth"><div class="dv" id="dVal">--</div><div class="dl">DEPTH ft</div></div>
+    </div>
+    <div class="stn-box">
+      <div>
+        <div style="font-size:8px;color:var(--dim);font-family:'Share Tech Mono',monospace;letter-spacing:1px">NEAREST NOAA TIDE STATION</div>
+        <div class="stn-name" id="stnName">-- Select a location</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="tide-type-badge" id="tideTypeBadge">--</span>
+        <span class="stn-dist" id="stnDist"></span>
+      </div>
+    </div>
+    <canvas id="tideC" style="width:100%;height:80px;margin-top:6px;border-radius:4px;background:#000;display:block"></canvas>
+    <div class="tide-stats">
+      <div class="tstat"><div class="tsv" id="tHt">--</div><div class="tsl">HEIGHT ft</div></div>
+      <div class="tstat"><div class="tsv" id="tPh" style="color:var(--cyan)">--</div><div class="tsl">PHASE</div></div>
+      <div class="tstat"><div class="tsv" id="tNH">--</div><div class="tsl">NEXT HIGH</div></div>
+      <div class="tstat"><div class="tsv" id="tFlow" style="color:var(--grn)">--</div><div class="tsl">FLOW</div></div>
+      <div class="tstat"><div class="tsv" id="tNL">--</div><div class="tsl">NEXT LOW</div></div>
+    </div>
+  </div>
+
+<!-- ═══ 3-DAY FORECAST ═══ -->
+<div class="panel">
+  <div class="pt">◈ 3-DAY FORECAST — TAP FOR 7-DAY DETAIL</div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px" id="forecastGrid">
+    <div class="fc-day"><div class="fc-date">--</div><div class="fc-icon">🌤</div><div class="fc-temps">--</div></div>
+    <div class="fc-day"><div class="fc-date">--</div><div class="fc-icon">🌤</div><div class="fc-temps">--</div></div>
+    <div class="fc-day"><div class="fc-date">--</div><div class="fc-icon">🌤</div><div class="fc-temps">--</div></div>
+  </div>
+</div>
+
+<!-- ═══ 7-DAY FORECAST MODAL ═══ -->
+<div id="fcastModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:9000;background:rgba(0,0,0,0.88);overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px">
+  <div style="background:var(--bg2);border:2px solid var(--gold);border-radius:10px;max-width:600px;margin:0 auto;padding:14px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div style="font-family:Orbitron,sans-serif;font-size:11px;font-weight:900;color:var(--gold);letter-spacing:1px">◈ 7-DAY FORECAST</div>
+      <button onclick="closeFcastModal()" style="background:transparent;border:2px solid var(--bdr2);color:var(--txt);font-family:Share Tech Mono,monospace;font-size:11px;padding:5px 12px;border-radius:4px;cursor:pointer;min-height:34px;touch-action:manipulation">✕ CLOSE</button>
+    </div>
+    <div style="font-size:9px;color:var(--dim);font-family:Share Tech Mono,monospace;margin-bottom:8px" id="fcastLocation">--</div>
+    <div id="fcastLoading" style="text-align:center;padding:20px;font-family:Share Tech Mono,monospace;font-size:11px;color:var(--dim)">Loading forecast...</div>
+    <div id="fcastContent" style="display:none"></div>
+  </div>
+</div>
+
+  <!-- WIND -->
+  <div class="panel">
+    <div class="pt">◈ WIND TELEMETRY · ANIMATED OVERLAY ON MAP</div>
+    <!-- Wind flow map canvas -->
+    <!-- Wind arrows overlaid on the live map above -->
+    <div class="wind-row">
+      <canvas id="compC" width="88" height="88" style="flex-shrink:0"></canvas>
+      <div>
+        <div class="wsb" id="wSpd">--</div>
+        <div style="font-size:11px;color:var(--gold);font-family:'Share Tech Mono',monospace;font-weight:700">KTS SUSTAINED</div>
+        <div style="font-family:'Orbitron',monospace;font-size:14px;color:var(--cyan);margin-top:2px;font-weight:700" id="wDir">--- °</div>
+        <div style="font-size:10px;color:var(--dim);font-family:'Share Tech Mono',monospace;margin-top:3px;font-weight:700" id="wGust">GUST: -- kts</div>
+        <div style="font-size:10px;color:var(--dim);font-family:'Share Tech Mono',monospace;font-weight:700" id="wDesc">--</div>
+      </div>
+    </div>
+    <div class="lp lp-ok" id="lpanel">
+      <span style="font-size:18px">⚡</span>
+      <div>
+        <div style="font-size:10px;font-family:'Share Tech Mono',monospace;font-weight:700;color:var(--grn)" id="ltxt">NO LIGHTNING WITHIN 15mi</div>
+        <div style="font-size:9px;color:var(--dim);font-family:'Share Tech Mono',monospace">Real-time monitor</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WATER TEMP -->
+  <div class="panel">
+    <div class="pt">◈ MARINE TELEMETRY — NOAA/NDBC LIVE</div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start">
+      <div><div class="temp-big" id="wTemp">--°</div><div class="tst" id="tStat" style="border-color:var(--dim);color:var(--dim)">LOADING</div></div>
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <div class="mbox"><div class="mbox-v" id="aTemp">--°</div><div class="mbox-l">AIR °F</div></div>
+        <div class="mbox"><div class="mbox-v" id="wvHt">--</div><div class="mbox-l">WAVE ft</div></div>
+      </div>
+    </div>
+    <div style="font-size:9px;color:var(--dim);margin:6px 0 3px;font-family:'Share Tech Mono',monospace;font-weight:700;display:flex;justify-content:space-between"><span>60°</span><span style="color:var(--grn)">74°–84° PRIME</span><span>95°</span></div>
+    <div class="tbar"><div class="tneedle" id="tNeedle" style="left:50%"></div></div>
+    <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--dim);font-family:'Share Tech Mono',monospace;font-weight:700"><span>LETHARGIC</span><span style="color:var(--grn)">◆ PRIME</span><span>STRESSED</span></div>
+    <div style="font-size:8px;color:var(--dim);font-family:'Share Tech Mono',monospace;margin-top:4px" id="tempSource">Source: --</div>
+  </div>
+
+<div class="panel">
+    <div class="pt">◈ BAROMETRIC PRESSURE</div>
+    <div class="pres-row">
+      <div><div class="pres-val" id="presV">--</div><div style="font-size:9px;color:var(--dim);font-family:'Share Tech Mono',monospace" id="presH">-- hPa</div></div>
+      <div style="text-align:center"><div class="pres-tr" id="presTr">●</div><div style="font-size:10px;font-family:'Share Tech Mono',monospace;font-weight:700" id="presLb">--</div></div>
+    </div>
+    <div class="pres-adv" id="presAd">Loading...</div>
+    <div class="lunar-row">
+      <div style="font-size:36px;line-height:1" id="moonEm">🌕</div>
+      <div>
+        <div style="font-family:'Orbitron',monospace;font-size:10px;color:var(--gold);font-weight:700;margin-bottom:2px" id="moonNm">LOADING...</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--dim)" id="moonIl">--% illuminated</div>
+        <div style="font-size:9px;margin-top:3px;font-family:'Share Tech Mono',monospace;font-weight:700" id="moonBon"></div>
+      </div>
+    </div>
+  </div>
+
+<div class="panel">
+    <div class="pt">◈ SOLUNAR PERIODS</div>
+    <div class="sol-item"><div><div class="sol-type">MAJOR</div><div class="sol-time" id="s1">--:--</div></div><span class="sol-badge smaj">MAJOR</span></div>
+    <div class="sol-item"><div><div class="sol-type">MINOR</div><div class="sol-time" id="s2">--:--</div></div><span class="sol-badge smin">minor</span></div>
+    <div class="sol-item"><div><div class="sol-type">MAJOR</div><div class="sol-time" id="s3">--:--</div></div><span class="sol-badge smaj">MAJOR</span></div>
+    <div class="sol-item"><div><div class="sol-type">MINOR</div><div class="sol-time" id="s4">--:--</div></div><span class="sol-badge smin">minor</span></div>
+    <div style="margin-top:6px;padding:6px 8px;background:rgba(183,121,31,.1);border:2px solid var(--gold);border-radius:4px;text-align:center">
+      <div style="font-size:9px;color:var(--gold);font-family:'Share Tech Mono',monospace;font-weight:700">NEXT MAJOR</div>
+      <div style="font-family:'Orbitron',monospace;font-size:15px;color:var(--gold);font-weight:900" id="nextMaj">--:--</div>
+    </div>
+  </div>
+
+<!-- SPECIES -->
+
+
+<!-- SPECIES WINDOWS -->
+<div class="sec-title">◈ SPECIES ACTIVITY WINDOWS</div>
+<div class="sg">
+  <div class="sc tp">
+    <div class="sc-inner">
+      <div style="flex-shrink:0;text-align:center;min-width:68px">
+        <div class="sc-name">⬡ TARPON</div>
+        <div class="sc-pct" id="tpS">--%</div>
+        <div class="sc-status" id="tpL">CALC</div>
+      </div>
+      <div class="sc-right">
+        <div class="wb"><div class="wf" id="tpB" style="width:0%"></div></div>
+        <div class="tags" id="tpT"><span class="tag tg">SILVER KING</span></div>
+        <div class="sc-det" id="tpD">Dawn &amp; dusk · Moving water</div>
+      </div>
+    </div>
+  </div>
+  <div class="sc pm">
+    <div class="sc-inner">
+      <div style="flex-shrink:0;text-align:center;min-width:68px">
+        <div class="sc-name">⬡ PERMIT</div>
+        <div class="sc-pct" id="pmS">--%</div>
+        <div class="sc-status" id="pmL">CALC</div>
+      </div>
+      <div class="sc-right">
+        <div class="wb"><div class="wf" id="pmB" style="width:0%"></div></div>
+        <div class="tags" id="pmT"><span class="tag tp2">PERMIT</span></div>
+        <div class="sc-det" id="pmD">Tidal turn · New &amp; full moon</div>
+      </div>
+    </div>
+  </div>
+  <div class="sc bf">
+    <div class="sc-inner">
+      <div style="flex-shrink:0;text-align:center;min-width:68px">
+        <div class="sc-name">⬡ BONEFISH</div>
+        <div class="sc-pct" id="bfS">--%</div>
+        <div class="sc-status" id="bfL">CALC</div>
+      </div>
+      <div class="sc-right">
+        <div class="wb"><div class="wf" id="bfB" style="width:0%"></div></div>
+        <div class="tags" id="bfT"><span class="tag tb">BONEFISH</span></div>
+        <div class="sc-det" id="bfD">First two hours incoming</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="panel">
+    <div class="pt">◈ NEARBY SERVICES — <span id="amenRegion" style="color:var(--cyan)">NEAREST FIRST</span></div>
+    <div id="amenList" style="overflow-y:auto;max-height:240px"><div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--dim);padding:12px;text-align:center">Select location to load nearby services</div></div>
+  </div>
+
+<div class="panel">
+    <div class="pt">◈ SIGHT-CASTING FLATS — <span id="spotReg" style="color:var(--cyan)">TAP MAP</span></div>
+    <div id="spotList" style="overflow-y:auto;max-height:240px"><div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--dim);padding:12px;text-align:center">Tap map or jump buttons to load flats data</div></div>
+  </div>
+
+<div class="panel">
+    <div class="pt">◈ NEXRAD RADAR — <span id="radLbl" style="color:var(--cyan)">--</span></div>
+    <div class="radar-wrap">
+      <svg width="100%" height="100%" viewBox="0 0 240 110" style="position:absolute;top:0;left:0">
+        <circle cx="120" cy="55" r="18" fill="none" stroke="rgba(0,255,0,.12)" stroke-width="1" stroke-dasharray="3,3"/>
+        <circle cx="120" cy="55" r="36" fill="none" stroke="rgba(0,255,0,.09)" stroke-width="1" stroke-dasharray="3,3"/>
+        <circle cx="120" cy="55" r="52" fill="none" stroke="#E53E3E" stroke-width="1.5" stroke-dasharray="4,3"/>
+        <line x1="120" y1="3" x2="120" y2="107" stroke="rgba(0,255,0,.07)" stroke-width="0.5"/>
+        <line x1="3" y1="55" x2="237" y2="55" stroke="rgba(0,255,0,.07)" stroke-width="0.5"/>
+        <text x="126" y="42" fill="rgba(0,255,0,.5)" font-size="6" font-family="Share Tech Mono,monospace">5mi</text>
+        <text x="126" y="22" fill="rgba(0,255,0,.5)" font-size="6" font-family="Share Tech Mono,monospace">10mi</text>
+        <text x="126" y="8" fill="#E53E3E" font-size="7" font-family="Share Tech Mono,monospace" font-weight="bold">◉ 15mi RANGE</text>
+        <circle cx="120" cy="55" r="4" fill="#00E5FF"/>
+        <circle cx="120" cy="55" r="8" fill="none" stroke="#00E5FF" stroke-width="1" opacity="0.5"/>
+      </svg>
+      <div class="radar-sweep"></div>
+      <div style="position:absolute;bottom:4px;right:6px;font-family:'Share Tech Mono',monospace;font-size:9px;color:rgba(0,255,0,.5);font-weight:700">LIVE</div>
+    </div>
+    <div style="margin-top:5px">
+      <div class="pt" style="margin-bottom:5px">◈ FLY COLOR MATRIX — LIVE CONDITIONS</div>
+      <div id="flyMatrix"><div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--dim);text-align:center;padding:8px">Loading...</div></div>
+    </div>
+  </div>
+  
+</div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════════
+// THEME — auto-switches by time, manual override
+// ══════════════════════════════════════════════════════════════════
+function getAutoTheme(){
+  const h=new Date().getHours();
+  // Dark: before 7am and after 7pm (when you're on the water at dawn/dusk)
+  // Light: 7am–7pm (on the water in sun)
+  return(h>=7&&h<19)?'light':'dark';
+}
+let userThemeOverride=null;
+
+function applyTheme(theme){
+  document.body.className=theme;
+  document.getElementById('themeIcon').textContent=theme==='dark'?'🌙':'☀️';
+  document.getElementById('themeLabel').textContent=theme==='dark'?'DARK':'LIGHT';
+  // Redraw canvases after theme change
+  setTimeout(()=>{drawCompass(ST.windDir,ST.windSpd);drawBaro();},50);
+}
+
+function toggleTheme(){
+  const current=document.body.className;
+  userThemeOverride=current==='dark'?'light':'dark';
+  applyTheme(userThemeOverride);
+}
+
+// Auto-switch every minute if no manual override
+setInterval(()=>{
+  if(!userThemeOverride) applyTheme(getAutoTheme());
+},60000);
+
+// ══════════════════════════════════════════════════════════════════
+// TIDE TYPE DEFINITIONS — scientifically correct per region
+// Sources: NOAA, oceanservice.noaa.gov/education/tutorial_tides
+// ══════════════════════════════════════════════════════════════════
+// Gulf of Mexico (Pine Island, Charlotte Harbor, Everglades):
+//   DIURNAL — 1 high + 1 low per day, ~24hr cycle, small range
+// Florida Keys (Atlantic side):
+//   MIXED SEMI-DIURNAL — 2 highs + 2 lows, unequal heights
+// Belize (Caribbean west):
+//   SEMI-DIURNAL dominant with diurnal component, tiny range 10-25cm
+// Ascension Bay / Yucatan (Caribbean east):
+//   SEMI-DIURNAL — 2 highs + 2 lows, small range ~30cm
+const TIDE_TYPES = {
+  keys:   {type:'mixed',   label:'MIXED SEMI-DIURNAL', cls:'ttb-mixed',  cycleHrs:12.4, rangeScale:1.5, note:'2 unequal highs/lows daily · Atlantic Florida Keys pattern'},
+  pine:   {type:'diurnal', label:'DIURNAL',             cls:'ttb-diurnal',cycleHrs:24.8, rangeScale:1.0, note:'1 high + 1 low per day · Gulf of Mexico pattern'},
+  belize: {type:'semi',    label:'SEMI-DIURNAL',        cls:'ttb-semi',   cycleHrs:12.4, rangeScale:0.3, note:'2 highs + 2 lows daily · Very small range 4–10 inches'},
+  mexico: {type:'semi',    label:'SEMI-DIURNAL',        cls:'ttb-semi',   cycleHrs:12.4, rangeScale:0.4, note:'2 highs + 2 lows daily · Caribbean Yucatan · Range ~12 inches'},
+};
+
+// ══════════════════════════════════════════════════════════════════
+// NOAA STATIONS — precise geographic coverage
+// ══════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════
+// COMPREHENSIVE NOAA STATION DATABASE
+// Florida Keys: BOTH bay-side (Florida Bay/Gulf) AND ocean-side (Atlantic)
+// CRITICAL: Bay and Atlantic sides of same key differ by 2-4 hours
+// The nearest station to your pin will automatically be selected
+// ══════════════════════════════════════════════════════════════════
+
+const STATIONS=[
+  {id:'8723214',name:'Virginia Key / Miami',            lat:25.7317,lon:-80.1617,side:'ocean'},
+  {id:'8723232',name:'Key Biscayne, Biscayne Bay',      lat:25.6930,lon:-80.1560,side:'bay'},
+  {id:'8723651',name:'Key Largo, Florida Bay',           lat:25.0867,lon:-80.4467,side:'bay'},
+  {id:'8723698',name:'Tavernier Creek, Florida Bay',     lat:25.0150,lon:-80.5233,side:'bay'},
+  {id:'8723759',name:'Islamorada, Hawk Channel',          lat:24.9250,lon:-80.6280,side:'ocean'},
+  {id:'8723970',name:'Vaca Key, Florida Bay',             lat:24.7117,lon:-81.0967,side:'bay'},
+  {id:'8724044',name:'Pigeon Key, Florida Bay',           lat:24.6950,lon:-81.1517,side:'bay'},
+  {id:'8724032',name:'Pigeon Key, Atlantic/Hawk Ch.',     lat:24.6950,lon:-81.1367,side:'ocean'},
+  {id:'8724374',name:'Bahia Honda, Florida Bay',          lat:24.6583,lon:-81.2767,side:'bay'},
+  {id:'8724178',name:'Big Pine Key, Florida Bay',         lat:24.6667,lon:-81.3667,side:'bay'},
+  {id:'8724226',name:'Big Pine Key NE, Florida Bay',      lat:24.7183,lon:-81.3633,side:'bay'},
+  {id:'8724231',name:'Big Pine Key North End',            lat:24.7233,lon:-81.3817,side:'bay'},
+  {id:'8724421',name:'Summerland Key, Niles Channel',     lat:24.6550,lon:-81.4550,side:'bay'},
+  {id:'8724313',name:'Cudjoe Key, Cudjoe Bay',            lat:24.6450,lon:-81.5333,side:'bay'},
+  {id:'8724489',name:'Big Coppitt Key, Waltz Key Basin',  lat:24.5840,lon:-81.6460,side:'bay'},
+  {id:'8724580',name:'Key West',                          lat:24.5500,lon:-81.8083,side:'ocean'},
+  {id:'8724699',name:'Dry Tortugas, Garden Key',          lat:24.6272,lon:-82.8731,side:'ocean'},
+  {id:'8725110',name:'Naples, FL',                        lat:26.1328,lon:-81.8067,side:'gulf'},
+  {id:'8725520',name:'Fort Myers, FL',                    lat:26.6478,lon:-81.8717,side:'gulf'},
+  {id:'8726520',name:'St. Petersburg, FL',                lat:27.7606,lon:-82.6272,side:'gulf'},
+  {id:'BELIZE_CITY',name:'Belize City',                   lat:17.498, lon:-88.188, side:'ocean',intl:true},
+  {id:'TURNEFFE',   name:'Turneffe Atoll, Belize',        lat:17.352, lon:-87.845, side:'ocean',intl:true},
+  {id:'ASCENSION',  name:'Ascension Bay, Mexico',         lat:19.817, lon:-87.483, side:'ocean',intl:true},
+  {id:'ESPSANTO',   name:'Espiritu Santo Bay, Mexico',    lat:19.500, lon:-87.600, side:'ocean',intl:true},
+];
+
+// NDBC water temp buoys
+const BUOYS=[
+  {id:'PKYF1',name:'Peterson Key, FL',  lat:24.918,lon:-80.747},
+  {id:'BKYF1',name:'Barnes Key, FL',    lat:25.119,lon:-80.834},
+  {id:'BNKF1',name:'Buttonwood Sound',  lat:25.087,lon:-80.519},
+  {id:'41047',name:'Fowey Rocks, FL',   lat:25.59, lon:-80.10},
+  {id:'41043',name:'NE Gulf — Keys',    lat:24.404,lon:-81.965},
+  {id:'CLBF1',name:'Charlotte Harbor',  lat:26.916,lon:-82.065},
+  {id:'42036',name:'W Gulf of Mexico',  lat:28.5,  lon:-84.517},
+  {id:'42056',name:'Yucatan Channel',   lat:21.964,lon:-85.059},
+];
+
+// ══════════════════════════════════════════════════════════════════
+// AMENITIES — with real website URLs for hotlinks
+// ══════════════════════════════════════════════════════════════════
+const AMENITIES={
+  keys:[
+    {type:'ramp',name:'Founders Park Ramp — Islamorada',lat:24.940,lon:-80.634,detail:'Public 2-lane ramp, parking, lights',url:'https://www.monroecountyfl.gov/facilities/facility/details/Founders-Park-88'},
+    {type:'ramp',name:'MM 79.5 State Ramp — Lower Matecumbe',lat:24.856,lon:-80.783,detail:'Free state ramp, 2 lanes',url:'https://www.google.com/maps/search/MM+79.5+boat+ramp+Florida+Keys'},
+    {type:'ramp',name:'Marathon Boat Ramp — 33rd St',lat:24.723,lon:-81.042,detail:'4-lane public ramp, lights, pump-out',url:'https://www.google.com/maps/search/Marathon+33rd+Street+boat+ramp+Florida+Keys'},
+    {type:'ramp',name:'Boca Chica Ramp — Stock Island',lat:24.574,lon:-81.714,detail:'Public 2-lane, off US-1',url:'https://www.google.com/maps/search/Boca+Chica+boat+ramp+Stock+Island'},
+    {type:'fuel',name:'Bud N Marys Marina — Islamorada',lat:24.923,lon:-80.644,detail:'Rec-90, diesel, live bait · Main guide hub',url:'https://www.budnmarys.com/'},
+    {type:'fuel',name:'Whale Harbor Marina — Islamorada',lat:24.906,lon:-80.712,detail:'Rec-90, gas, diesel, tackle, bait',url:'https://www.whaleharbormarina.com/'},
+    {type:'fuel',name:'Marathon Marina — Boot Key Harbor',lat:24.707,lon:-81.100,detail:'Rec-90, diesel, pump-out, live bait',url:'https://www.marathonmarina.com/'},
+    {type:'fuel',name:'Stock Island Marina Village',lat:24.563,lon:-81.737,detail:'Full-service, rec-90, diesel, repairs',url:'https://www.stockislandmarinavillage.com/'},
+    {type:'bar', name:'Lorelei Restaurant & Cabana Bar',lat:24.912,lon:-80.721,detail:'Dockage, tiki bar, sunset views',url:'https://www.loreleifloridakeys.com/'},
+    {type:'bar', name:"Robbie's of Islamorada",lat:24.878,lon:-80.742,detail:'Waterfront tiki, tarpon feeding, dock',url:'https://www.robbies.com/'},
+    {type:'bar', name:'Bud N Marys Dockside Bar',lat:24.923,lon:-80.644,detail:'Guide hangout, live music, full menu',url:'https://www.budnmarys.com/'},
+    {type:'bar', name:'Kaiyo Grill & Sushi — Islamorada',lat:24.929,lon:-80.625,detail:'Oceanfront, sushi, craft cocktails',url:'https://www.kaiyoislamorada.com/'},
+    {type:'bar', name:'Castaway Waterfront — Marathon',lat:24.718,lon:-81.069,detail:'Marathon waterfront, full bar & grill',url:'https://castawaymarathon.com/'},
+    // Big Pine / No Name / Lower Keys
+    {type:'bar', name:'No Name Pub — Big Pine Key',lat:24.706,lon:-81.356,detail:'Most remote bar in the Keys, cash only, no phone, dark & cold',url:'https://www.google.com/maps/search/No+Name+Pub+Big+Pine+Key+Florida'},
+    {type:'bar', name:'Square Grouper Bar — Cudjoe Key',lat:24.648,lon:-81.513,detail:'On MM 22.5 bayside, low key local bar, fresh fish, cold beer',url:'https://www.google.com/maps/search/Square+Grouper+Cudjoe+Key+Florida'},
+    {type:'bar', name:'Mangrove Mamas — Sugarloaf Key',lat:24.645,lon:-81.558,detail:'MM 20 oceanside, legendary breakfast & lunch, cash preferred',url:'https://www.google.com/maps/search/Mangrove+Mamas+Sugarloaf+Key'},
+    {type:'bar', name:'The Broken Prop — Big Pine Key',lat:24.702,lon:-81.347,detail:'MM 30.5 bayside, guide hangout, great burgers, cold beer, casual',url:'https://www.google.com/maps/search/Broken+Prop+Big+Pine+Key+Florida'},
+    {type:'bar', name:'Geiger Key Marina & Smokehouse',lat:24.571,lon:-81.697,detail:'Hidden gem past Boca Chica, tiki bar, smoked fish, dockage',url:'https://geigerkeymarina.com/'},
+    {type:'bar', name:'Looe Key Reef Resort & Tiki Bar',lat:24.558,lon:-81.407,detail:'MM 27.5 bayside, dive resort tiki, Looe Key reef access',url:'https://www.looekey.com/tiki-bar/'},
+    {type:'fuel',name:'Cudjoe Key Gas & Marina',lat:24.643,lon:-81.528,detail:'Rec-90 & diesel, Cudjoe Bay, nearest fuel lower Keys bayside',url:'https://www.google.com/maps/search/Cudjoe+Key+marina+fuel+Florida'},
+    {type:'fuel',name:'Sugarloaf Marina',lat:24.641,lon:-81.563,detail:'Rec-90, ice, bait, Sugarloaf area',url:'https://www.google.com/maps/search/Sugarloaf+Marina+Florida+Keys'},
+    {type:'ramp',name:'Big Pine Key Boat Ramp — Bogie Channel',lat:24.673,lon:-81.359,detail:'Public county ramp, Big Pine Bay access, lights',url:'https://www.google.com/maps/search/Big+Pine+Key+boat+ramp+Bogie+Channel'},
+    {type:'ramp',name:'Sugarloaf Key Ramp — MM 17',lat:24.641,lon:-81.560,detail:'Public ramp, Sugarloaf Sound access, lower Keys',url:'https://www.google.com/maps/search/Sugarloaf+Key+boat+ramp+Florida'},
+    // Sea Tow
+    {type:'seatow',name:'Sea Tow Key Largo',lat:25.086,lon:-80.445,detail:'Upper Keys: Ocean Reef to Tavernier · 24/7',phone:'800-473-2869',url:'https://seatow.com/key-largo/'},
+    {type:'seatow',name:'Sea Tow Key West',lat:24.551,lon:-81.780,detail:'Lower Keys & Key West · 24/7',phone:'800-473-2869',url:'https://seatow.com/key-west/'},
+  ],
+  pine:[
+    {type:'ramp',name:'Matlacha Ramp — Pine Island Road',lat:26.630,lon:-82.079,detail:'Free county ramp, 2 lanes',url:'https://www.google.com/maps/search/Matlacha+boat+ramp+Pine+Island+Florida'},
+    {type:'ramp',name:'Punta Rassa Ramp — Cape Coral',lat:26.509,lon:-82.015,detail:'3-lane ramp, near Sanibel ferry',url:'https://www.google.com/maps/search/Punta+Rassa+boat+ramp+Cape+Coral'},
+    {type:'ramp',name:'Cayo Costa State Park Ramp',lat:26.675,lon:-82.268,detail:'Primitive ramp, boat-in access only',url:'https://www.floridastateparks.org/parks-and-trails/cayo-costa-state-park'},
+    {type:'ramp',name:'Burnt Store Marina Ramp',lat:26.759,lon:-82.062,detail:'Full-service marina, covered storage',url:'https://www.burntstoremarina.com/'},
+    {type:'fuel',name:'Pineland Marina — Pine Island',lat:26.650,lon:-82.175,detail:'Rec-90, diesel, ice, bait',url:'https://www.google.com/maps/search/Pineland+Marina+Pine+Island+Florida'},
+    {type:'fuel',name:'South Seas Resort Marina',lat:26.597,lon:-82.165,detail:'Rec-90, diesel, full service',url:'https://southseas.com/marina/'},
+    {type:'fuel',name:'Burnt Store Marina Fuel Dock',lat:26.759,lon:-82.062,detail:'Rec-90, diesel, pump-out',url:'https://www.burntstoremarina.com/'},
+    {type:'bar', name:'Tarpon Lodge — Pineland',lat:26.643,lon:-82.167,detail:'Historic waterfront inn, full bar',url:'https://www.tarponlodge.com/'},
+    {type:'bar', name:'Cabbage Key Bar & Restaurant',lat:26.716,lon:-82.232,detail:'Famous dollar-bill bar, boat-in only',url:'https://cabbagekey.com/'},
+    {type:'bar', name:'Lazy Flamingo — Matlacha',lat:26.629,lon:-82.079,detail:'Waterfront seafood bar, local favorite',url:'https://www.lazyflamingo.com/'},
+    {type:'bar', name:'Smugglers Restaurant — Pine Island',lat:26.650,lon:-82.145,detail:'Waterfront, full bar, fresh seafood',url:'https://www.google.com/maps/search/Smugglers+Restaurant+Pine+Island+Florida'},
+  ],
+  belize:[
+    {type:'ramp',name:'San Pedro Town Ramp',lat:17.918,lon:-87.963,detail:'Main public ramp, Ambergris Caye',url:'https://www.google.com/maps/search/San+Pedro+boat+ramp+Belize'},
+    {type:'fuel',name:'Banana Beach Marina Fuel',lat:17.912,lon:-87.964,detail:'Fuel dock, ice, guide services',url:'https://www.bananabeachbelize.com/'},
+    {type:'fuel',name:'Turneffe Flats Lodge',lat:17.352,lon:-87.845,detail:'Lodge dock fuel — guide access',url:'https://www.tflats.com/'},
+    {type:'bar', name:'Palapa Bar & Grill — San Pedro',lat:17.922,lon:-87.958,detail:'Famous over-water tiki bar',url:'https://www.facebook.com/palapabar/'},
+    {type:'bar', name:"Wet Willy's — Ambergris",lat:17.919,lon:-87.956,detail:'Waterfront dive bar, cold drinks',url:'https://www.google.com/maps/search/Wet+Willys+Ambergris+Caye+Belize'},
+  ],
+  mexico:[
+    {type:'ramp',name:'Punta Allen Ramp',lat:19.617,lon:-87.533,detail:'Only ramp for Ascension Bay — call guide first',url:'https://www.google.com/maps/search/Punta+Allen+boat+ramp+Mexico'},
+    {type:'fuel',name:'Punta Allen Village Fuel',lat:19.619,lon:-87.531,detail:'Very limited — call guide to confirm',url:'https://www.google.com/maps/search/Punta+Allen+fuel+Yucatan'},
+    {type:'bar', name:'Cuzan Guest House — Punta Allen',lat:19.618,lon:-87.532,detail:'Remote lodge, bar, Ascension Bay base',url:'https://www.cuzanguesthouse.com/'},
+    {type:'bar', name:'Boca Paila Lodge',lat:20.138,lon:-87.457,detail:'Fly fishing lodge, bar, Biosphere reserve',url:'https://www.bocapaila.com/'},
+  ]
+};
+
+// ══════════════════════════════════════════════════════════════════
+// FLATS SPOTS
+// ══════════════════════════════════════════════════════════════════
+const SPOTS={
+  keys:{name:'FL KEYS',spots:[
+    {name:'LONG KEY GRASS FLAT',depth:'1–3 ft',det:'Turtle grass & sand potholes. Tarpon laid up at dawn. Lead fish 10–12 ft upcurrent. Fish where grass meets sand.',badges:['TARPON'],status:'prime'},
+    {name:'BUCHANAN BANK — OPEN FLAT',depth:'1–3 ft',det:'Open sand/grass flat. Tailing permit on incoming. Lead 6 ft, drop Del Brown to face. Do not strip — wait for permit to turn.',badges:['PERMIT'],status:'prime'},
+    {name:'MARQUESAS TURTLE GRASS FLATS',depth:'1–4 ft',det:'Permit tail on the flood. Tarpon daisy-chain on beach edge May–Jun. Grand Slam flat. Lowest pressure in the Keys.',badges:['PERMIT','TARPON'],status:'prime'},
+    {name:'FLORIDA BAY BACKCOUNTRY BANKS',depth:'1–3 ft',det:'Miles of skinny turtle grass. Resident tarpon rolling at dawn. Pole the mangrove edge on incoming. Silence required.',badges:['TARPON'],status:'hot'},
+    {name:'LOGGERHEAD KEY FLAT — BIG PINE',depth:'1–3 ft',det:'Legendary permit flat. Hard sand over turtle grass. Incoming tide concentrates tailing permit in 2 ft.',badges:['PERMIT'],status:'hot'},
+    {name:'CONTENT KEY BASINS',depth:'1–4 ft',det:'Tarpon rolling in basin shallows year-round. Pole silently — motor noise ends the bite.',badges:['TARPON'],status:'hot'},
+    {name:'CUDJOE KEY OCEANSIDE FLAT',depth:'1–4 ft',det:'Permit on sand over coral heads. Tarpon on outside grass edge. Remote — minimal pressure.',badges:['PERMIT','TARPON'],status:'check'},
+  ]},
+  pine:{name:'PINE IS. / SANIBEL',spots:[
+    {name:'PINE ISLAND SOUND EAST FLATS',depth:'1–4 ft',det:'Largest turtle grass expanse on Gulf coast. Tarpon rolling at sunrise Apr–Jun. Pole slowly along grass edges.',badges:['TARPON'],status:'prime'},
+    {name:'TARPON BAY — SANIBEL ISLAND',depth:'2–4 ft',det:'Historic flat — first tarpon on rod & reel taken here. Laid-up tarpon on incoming. Sight fish at distance.',badges:['TARPON'],status:'prime'},
+    {name:'CAPTIVA ISLAND INSIDE FLAT',depth:'1–3 ft',det:'Protected grass flat inside Captiva. Permit and tarpon on incoming. Sight cast to rolling fish on the flat, not the pass.',badges:['PERMIT','TARPON'],status:'hot'},
+    {name:'CAYO COSTA NORTH BEACH FLAT',depth:'2–4 ft',det:'Beach-adjacent flat. Tarpon daisy-chaining May–Jul. Pole parallel to beach, cast to passing schools.',badges:['TARPON'],status:'hot'},
+    {name:'MATLACHA PASS GRASS FLATS',depth:'1–3 ft',det:'Shallow grass on the flat side of the pass — not the channel. Tarpon cruise on max ebb.',badges:['TARPON','PERMIT'],status:'hot'},
+    {name:'DING DARLING — EAST FLAT',depth:'1–2 ft',det:'Refuge flat. Permit tailing in late spring on incoming. No motor — pole or wade only.',badges:['PERMIT'],status:'check'},
+  ]},
+  belize:{name:'BELIZE',spots:[
+    {name:'TURNEFFE ATOLL PERMIT FLAT',depth:'1–3 ft',det:'Globally top-3 permit flat. Schools of 20–80 permit on incoming. DEAD DROP only — no strip. Tiny tidal range — subtle movement matters.',badges:['PERMIT'],status:'prime'},
+    {name:"GLOVER'S REEF INTERIOR FLAT",depth:'1–4 ft',det:'Protected atoll flat. Tarpon rolling at dawn. Lower pressure than Turneffe. Tides smaller than FL Keys.',badges:['TARPON'],status:'hot'},
+    {name:'AMBERGRIS CAYE EAST FLAT',depth:'1–3 ft',det:'Permit tailing on incoming. Crab pattern essential. Dead drift only. Wadeable on low water.',badges:['PERMIT'],status:'hot'},
+    {name:'LIGHTHOUSE REEF FLAT',depth:'1–4 ft',det:'Remote atoll flat. Grand Slam potential. Very small tidal flow — fish movement and shade more important than tide here.',badges:['TARPON','PERMIT'],status:'check'},
+  ]},
+  mexico:{name:'ASCENSION BAY',spots:[
+    {name:'ASCENSION BAY MARL FLAT',depth:'1–3 ft',det:'Globally #1 permit destination. Del Brown on hard marl, lead 6–8 ft, dead drift. Two tidal cycles daily but very small range — about 12 inches. Long leaders required.',badges:['PERMIT'],status:'prime'},
+    {name:'ESPIRITU SANTO BAY FLAT',depth:'2–5 ft',det:'Tarpon rolling May–Aug. Daisy-chain schools at dawn. Caribbean semi-diurnal tides — two full cycles per day, small range.',badges:['TARPON'],status:'prime'},
+    {name:"SIAN KA'AN BIOSPHERE FLAT",depth:'1–3 ft',det:'UNESCO protected. Zero commercial pressure. Cast exclusively to visible tailing fish. Subtle tide movement still triggers feeding.',badges:['PERMIT'],status:'hot'},
+    {name:'PUNTA PAJAROS FLAT',depth:'1–4 ft',det:'Remote grass flat. Grand Slam potential. Best May–Jul. Semi-diurnal tides — two shots at the tidal turn daily.',badges:['TARPON','PERMIT'],status:'hot'},
+  ]}
+};
+
+// ══════════════════════════════════════════════════════════════════
+// FLY DATABASE
+// ══════════════════════════════════════════════════════════════════
+const FLIES={
+  tarpon:{
+    dawn_dusk:[
+      {name:'Black Death',color:'#111',why:'Stu Apte Keys original. Dark silhouette at dawn/dusk. Guide\'s first choice on the flat.',best:true},
+      {name:'Tarpon Toad (Black/Purple)',color:'#2d0050',why:'Adult tarpon peak vision: purple/blue/UV (5 cones). "Blurple" combo — max contrast in low light. Strip-pause-strip.',best:true},
+      {name:'Tarpon Bunny (Black/Purple)',color:'#4B0082',why:'Rabbit strip pulses on the pause. Black+purple for backcountry at dawn. Slow strip, long pause.',best:false},
+      {name:'Tarpon Bunny (Black/Red)',color:'#8B0000',why:'Black/red "Bloody Mary" style. For overcast or stained early morning flat. Rabbit strip action.',best:false},
+    ],
+    bright_clear:[
+      {name:'Cockroach',color:'#5C4033',why:'Norman Duncan original. Sparse grizzly hackle, natural brown/tan. The clear-water standard.',best:true},
+      {name:'Apte Too',color:'#A0785A',why:'Stu Apte Keys-style. Natural tan/brown, sparse. Gin-clear — tarpon inspect carefully.',best:true},
+      {name:'Tarpon Toad (Tan/White)',color:'#C8A87A',why:'Hovers between strips. Toadfish/crab imitation over white sand bottom.',best:false},
+      {name:'EP Peanut Butter',color:'#8B6914',why:'Enrico Puglisi fibers. Natural baitfish profile over turtle grass in bright sun.',best:false},
+    ],
+    stained:[
+      {name:'Chartreuse Tarpon Toad',color:'#7FFF00',why:'Stained/dark bottom: chartreuse most visible. Strip quick, pause triggers bite.',best:true},
+      {name:'Tequila Sunrise',color:'#FF6600',why:'Orange/yellow. High-vis in turbid water. Fast strip for reaction.',best:false},
+      {name:'Golden Rita',color:'#DAA520',why:'Gold/orange over dark grass. Classic Everglades murky water fly.',best:false},
+    ]
+  },
+  permit:{
+    bright_clear:[
+      {name:'Del Brown Permit Crab (Tan)',color:'#C8A87A',why:'The permit standard. Named for legendary Keys angler Del Brown. DEAD DROP — never strip.',best:true},
+      {name:'Merkin Crab (Light)',color:'#D2B48C',why:'Tim Borski pattern. Light on bright flat. Cast ahead, sink naturally to bottom.',best:true},
+      {name:'Squimp (Tan)',color:'#BFA882',why:'Shrimp/crab hybrid. Natural tone in clear shallow water. Dead drift only.',best:false},
+    ],
+    low_light:[
+      {name:'Del Brown Crab (Olive)',color:'#556B2F',why:'Olive/dark for low light. Better silhouette contrast. Permit hunt visually even at dawn.',best:true},
+      {name:'Flexo Crab (Dark)',color:'#3D2B1F',why:'Dark crab in low light. Silhouette over color. Incoming tide, sand potholes.',best:false},
+    ],
+    stained:[
+      {name:'Del Brown Crab (Orange)',color:'#CC6600',why:'Brighter crab for stained water. Still dead-drop only — permit will find it.',best:true},
+    ]
+  }
+};
+
+// ══════════════════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════════════════
+const ST={
+  lat:24.6450,lon:-81.5333,region:'keys',
+  waterTemp:78,airTemp:82,windSpd:12,windDir:135,windGust:16,
+  waveHt:0.8,pressure:30.12,pressureTrend:'steady',
+  moonPhaseVal:14,lunarScore:.35,permitBonus:false,
+  baroHist:[],tidePhase:'RISING',tideFlow:'MODERATE',
+  tideHt:'1.2',nextHigh:'--',nextLow:'--',
+  tidePreds:[],noaaStationId:'8723698',noaaStationName:'Tavernier, FL',
+  busy:false,gpsWatcher:null
+};
+
+// ══════════════════════════════════════════════════════════════════
+// MAP — CartoDB tiles (confirmed file:// compatible)
+// ══════════════════════════════════════════════════════════════════
+let map,pinMarker,gpsMarker,radarCircle;
+
+function initMap(){
+  map=L.map('map',{center:[24.6450,-81.5333],zoom:10});
+
+  // ESRI World Street Map — full color, file:// compatible, no referrer restriction
+  const street=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+    {attribution:'&copy; Esri, HERE, Garmin',maxZoom:20});
+  // ESRI Topo — shows terrain and depth contours near coast
+  const topo=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
+    {attribution:'&copy; Esri, USGS',maxZoom:20});
+  // ESRI Ocean — nautical, depth contours, reefs — ideal for flats fishing
+  const ocean=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}',
+    {attribution:'&copy; Esri GEBCO NOAA',maxZoom:13});
+  // ESRI Satellite imagery
+  const sat=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    {attribution:'&copy; Esri, Maxar',maxZoom:20});
+  // CartoDB Dark — for low-light use
+  const dark=L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_matter/{z}/{x}/{y}{r}.png',
+    {attribution:'&copy; CartoDB &copy; OSM',subdomains:'abcd',maxZoom:19});
+
+  street.addTo(map);
+  L.control.layers(
+    {'🗺 Street (Color)':street,'🏔 Topo':topo,'🌊 Ocean/Nautical':ocean,'🛰 Satellite':sat,'🌑 Dark':dark},
+    {},{position:'topright',collapsed:true}
+  ).addTo(map);
+
+  // Wind overlay canvas — sits on top of the map, Windy-style animated barbs
+  var windCanvas = L.canvas({padding:0.5});
+  window._windOverlayCanvas = null;  // populated after map is ready
+  // wind overlay events set below
+
+  // 15-mile radar ring
+  radarCircle=L.circle([ST.lat,ST.lon],{radius:24140,color:'#E53E3E',weight:2,dashArray:'8,6',fill:false,opacity:.7}).addTo(map);
+
+  const pinIcon=L.divIcon({className:'',html:'<div class="pin-dot"></div>',iconSize:[16,16],iconAnchor:[8,8]});
+  pinMarker=L.marker([ST.lat,ST.lon],{icon:pinIcon,draggable:true}).addTo(map);
+  pinMarker.bindTooltip('📍 Drag to any location',{permanent:false,direction:'top'});
+
+  map.on('click',e=>setPin(e.latlng.lat,e.latlng.lng));
+  pinMarker.on('dragend',e=>{const p=e.target.getLatLng();setPin(p.lat,p.lng);});
+  // Redraw wind overlay on map movement, zoom, and when tiles finish
+  map.on('moveend', function(){ drawWindFlowMap(); });
+  map.on('zoomend', function(){ drawWindFlowMap(); });
+  map.whenReady(function(){ setTimeout(startWindAnimation, 400); });
+
+  // Named flat markers
+  [[24.6450,-81.5333,'CUDJOE KEY'],[24.9252,-80.6278,'ISLAMORADA'],[24.587,-82.101,'MARQUESAS'],[24.5551,-81.7800,'KEY WEST'],
+   [26.561,-82.191,'PINE IS.'],[26.4488,-82.0723,'SANIBEL'],[17.3535,-87.8258,'TURNEFFE'],
+   [19.817,-87.483,'ASCENSION'],[19.5,-87.6,'ESPIRITU']].forEach(([la,lo,nm])=>{
+    const ic=L.divIcon({className:'',html:`<div style="background:rgba(0,0,0,.85);border:2px solid #FFD700;color:#FFD700;font-family:Share Tech Mono,monospace;font-size:8px;padding:2px 6px;border-radius:4px;cursor:pointer;white-space:nowrap;font-weight:700">${nm}</div>`,iconAnchor:[20,10]});
+    L.marker([la,lo],{icon:ic}).addTo(map).on('click',()=>{map.setView([la,lo],11);setPin(la,lo);});
+  });
+}
+
+function setPin(lat,lon){
+  ST.lat=parseFloat(lat.toFixed(6));ST.lon=parseFloat(lon.toFixed(6));
+  pinMarker.setLatLng([lat,lon]);
+  if(radarCircle)radarCircle.setLatLng([lat,lon]);
+  detectRegion();updateDepth();
+  document.getElementById('mapBar').textContent=`📍 ${Math.abs(ST.lat).toFixed(4)}°${ST.lat>0?'N':'S'} ${Math.abs(ST.lon).toFixed(4)}°${ST.lon<0?'W':'E'} — fetching live data...`;
+  go();
+}
+
+function jumpTo(lat,lon,zoom){map.setView([lat,lon],zoom||10);setPin(lat,lon);}
+
+function detectRegion(){
+  let r='keys';
+  if(ST.lat>25.2&&ST.lat<29&&ST.lon>-83.5&&ST.lon<-81.2)r='pine';
+  else if(ST.lat>14&&ST.lat<20&&ST.lon>-89&&ST.lon<-86.5)r='belize';
+  else if(ST.lat>18&&ST.lat<22.5&&ST.lon>-89&&ST.lon<-86.5)r='mexico';
+  ST.region=r;
+  document.getElementById('spotReg').textContent=(SPOTS[r]&&SPOTS[r].name)||r.toUpperCase();
+  document.getElementById('radLbl').textContent={keys:'SE FLORIDA',pine:'SW FLORIDA',belize:'BELIZE',mexico:'YUCATAN'}[r]||r.toUpperCase();
+  document.getElementById('amenRegion').textContent=((SPOTS[r]&&SPOTS[r].name)||r)+' · NEAREST FIRST';
+  // Update tide type badge
+  const tt=TIDE_TYPES[r];
+  const badge=document.getElementById('tideTypeBadge');
+  badge.textContent=tt.label;badge.className='tide-type-badge '+tt.cls;
+  badge.title=tt.note;
+  renderSpots();renderAmenities();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// GPS
+// ══════════════════════════════════════════════════════════════════
+function startGPS(){
+  const btn=document.getElementById('gpsBtn');
+  if(!navigator.geolocation){document.getElementById('alGPS').textContent='GPS: NOT SUPPORTED';return;}
+  btn.textContent='📡 LOCATING...';btn.classList.add('gps-on');
+  navigator.geolocation.getCurrentPosition(pos=>{
+    const la=pos.coords.latitude,lo=pos.coords.longitude,acc=Math.round(pos.coords.accuracy);
+    const ic=L.divIcon({className:'',html:'<div class="gps-pulse"></div>',iconSize:[18,18],iconAnchor:[9,9]});
+    if(gpsMarker)map.removeLayer(gpsMarker);
+    gpsMarker=L.marker([la,lo],{icon:ic}).addTo(map);
+    gpsMarker.bindPopup(`<b>YOUR LOCATION</b><br>${la.toFixed(4)}°N ${Math.abs(lo).toFixed(4)}°W<br>±${acc}m accuracy`).openPopup();
+    map.setView([la,lo],11);setPin(la,lo);
+    btn.textContent='✓ GPS LOCKED';document.getElementById('alGPS').textContent=`GPS: ±${acc}m`;
+    if(ST.gpsWatcher)navigator.geolocation.clearWatch(ST.gpsWatcher);
+    ST.gpsWatcher=navigator.geolocation.watchPosition(p=>{
+      if(gpsMarker)gpsMarker.setLatLng([p.coords.latitude,p.coords.longitude]);
+      document.getElementById('alGPS').textContent=`GPS: ±${Math.round(p.coords.accuracy)}m`;
+    },{enableHighAccuracy:true,maximumAge:15000,timeout:20000});
+  },err=>{
+    btn.textContent='📍 MY LOCATION';btn.classList.remove('gps-on');
+    document.getElementById('alGPS').textContent={1:'GPS DENIED',2:'GPS UNAVAILABLE',3:'GPS TIMEOUT'}[err.code]||'GPS ERROR';
+  },{enableHighAccuracy:true,timeout:20000,maximumAge:0});
+}
+
+// ══════════════════════════════════════════════════════════════════
+// NEAREST NOAA STATION
+// ══════════════════════════════════════════════════════════════════
+function nearestStation(lat,lon){
+  // Sort all stations by distance, pick closest non-international
+  var sorted=STATIONS.filter(function(s){return !s.intl;}).map(function(s){
+    return {s:s, d:Math.hypot(lat-s.lat,lon-s.lon)};
+  }).sort(function(a,b){return a.d-b.d;});
+  var best=sorted[0].s, bestD=sorted[0].d;
+  // If international region, use intl stations instead
+  var intlSorted=STATIONS.filter(function(s){return s.intl;}).map(function(s){
+    return {s:s, d:Math.hypot(lat-s.lat,lon-s.lon)};
+  }).sort(function(a,b){return a.d-b.d;});
+  if(intlSorted.length&&intlSorted[0].d<bestD){best=intlSorted[0].s;bestD=intlSorted[0].d;}
+  const miles=Math.round(bestD*69);
+  ST.noaaStationId=best.id;ST.noaaStationName=best.name;
+  const sideLabel=best.side==='bay'?' 🔵 BAY SIDE':best.side==='ocean'?' 🟡 OCEAN SIDE':best.side==='gulf'?' 🟢 GULF SIDE':'';
+  document.getElementById('stnName').textContent=`${best.name}${sideLabel}  (NOAA #${best.id})`;
+  document.getElementById('stnDist').textContent=`~${miles} mi`;
+  document.getElementById('srcInfo').textContent=`Tide: NOAA #${best.id} — ${best.name}${sideLabel} | Bay & ocean sides tracked separately`;
+  return best;
+}
+
+// ══════════════════════════════════════════════════════════════════
+// NOAA TIDE API
+// ══════════════════════════════════════════════════════════════════
+async function fetchNOAATides(stationId){
+  var now=new Date();
+  // Use LOCAL date (not UTC) — toISOString() returns UTC which can be wrong day
+  var yr=now.getFullYear(),mo=String(now.getMonth()+1).padStart(2,'0'),dy=String(now.getDate()).padStart(2,'0');
+  var today=yr+''+mo+''+dy;
+  // Tomorrow for overlap — ensures NOW marker works even near midnight
+  var tom=new Date(now);tom.setDate(tom.getDate()+1);
+  var yr2=tom.getFullYear(),mo2=String(tom.getMonth()+1).padStart(2,'0'),dy2=String(tom.getDate()).padStart(2,'0');
+  var tomorrow=yr2+''+mo2+''+dy2;
+  var url='https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?begin_date='+today+'&end_date='+tomorrow+'&station='+stationId+'&product=predictions&datum=MLLW&time_zone=lst_ldt&interval=hilo&units=english&application=B2FlatsStalker&format=json';
+  try{
+    var r=await fetch(url);var d=await r.json();
+    if(d.error||(!(d.predictions&&d.predictions.length)))throw new Error((d.error&&d.error.message)||'No data');
+    var preds=d.predictions;
+
+    // Fix date parsing: NOAA returns "2026-04-30 06:15" — replace space with T
+    // so new Date() parses it as LOCAL time, not UTC
+    preds=preds.map(function(p){
+      return {t:p.t.replace(' ','T'), v:p.v, type:p.type};
+    });
+
+    ST.tidePreds=preds;
+    var curHt=1.0;
+    var nt=now.getTime();
+    for(var i=0;i<preds.length-1;i++){
+      var t1=new Date(preds[i].t).getTime(),t2=new Date(preds[i+1].t).getTime();
+      if(nt>=t1&&nt<=t2){
+        curHt=parseFloat(preds[i].v)+((nt-t1)/(t2-t1))*(parseFloat(preds[i+1].v)-parseFloat(preds[i].v));
+        break;
+      }
+    }
+    var nH=null,nL=null;
+    preds.forEach(function(p){
+      if(new Date(p.t)>now){
+        if(p.type==='H'&&!nH)nH=p;
+        if(p.type==='L'&&!nL)nL=p;
+      }
+    });
+    ST.tidePhase=(nH&&(!nL||new Date(nH.t)<new Date(nL.t)))?'RISING':'FALLING';
+    var lastEvt=null;
+    preds.forEach(function(p){if(new Date(p.t)<=now)lastEvt=p;});
+    if(lastEvt){
+      var nextEvt=ST.tidePhase==='RISING'?nH:nL;
+      if(nextEvt){
+        var fp=Math.sin(((now-new Date(lastEvt.t))/(new Date(nextEvt.t)-new Date(lastEvt.t)))*Math.PI);
+        ST.tideFlow=fp<.15?'SLACK':fp<.38?'SLOW':fp<.7?'MODERATE':'STRONG';
+      }
+    }
+    ST.tideHt=curHt.toFixed(1);
+    ST.nextHigh=nH?fmtTime(nH.t):'--';
+    ST.nextLow=nL?fmtTime(nL.t):'--';
+    document.getElementById('tHt').textContent=ST.tideHt+' ft';
+    document.getElementById('tPh').textContent=ST.tidePhase;
+    document.getElementById('tNH').textContent=ST.nextHigh;
+    document.getElementById('tFlow').textContent=ST.tideFlow||'--';
+    document.getElementById('tNL').textContent=ST.nextLow;
+    document.getElementById('alT').textContent='TIDE: '+ST.tideHt+'ft '+ST.tidePhase+' · NOAA '+stationId;
+    setSrc('srcTide','TIDE: NOAA '+stationId+' ✓','ok');
+    drawTide(preds,now);
+    return true;
+  }catch(e){
+    console.warn('NOAA tide:',e.message);
+    setSrc('srcTide','TIDE: COMPUTED','warn');
+    tideFallback();return false;
+  }
+}
+
+function fmtTime(t){return new Date(t).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:true});}
+
+// ══════════════════════════════════════════════════════════════════
+// TIDE FALLBACK — region-aware, uses correct tidal type per area
+// ══════════════════════════════════════════════════════════════════
+function tideFallback(){
+  const now=new Date();
+  const h=now.getHours()+now.getMinutes()/60;
+  const tt=TIDE_TYPES[ST.region]||TIDE_TYPES.keys;
+  // Use correct cycle length for region
+  const cycle=tt.cycleHrs; // 12.4hr semi-diurnal or 24.8hr diurnal
+  const scale=tt.rangeScale; // tidal height range multiplier
+  // Offset by region so Belize/Mexico show different phase from FL
+  const offsets={keys:3, pine:5, belize:1.5, mexico:2.8}; // hours offset = different geographic timing
+  const offset=offsets[ST.region]||3;
+  const tv=scale*1.5*Math.sin((h-offset)*Math.PI/(cycle/2))+scale*1.0;
+  const ts=scale*1.5*Math.cos((h-offset)*Math.PI/(cycle/2));
+  ST.tidePhase=ts>.18?'RISING':ts<-.18?'FALLING':ts>0?'HIGH SLACK':'LOW SLACK';
+  const abs=Math.abs(ts);
+  ST.tideFlow=abs<.15?'SLACK':abs<.5?'SLOW':abs<1?'MODERATE':'STRONG';
+  ST.tideHt=Math.max(0.1,tv).toFixed(1);
+  const nH=offset+cycle/2*Math.round((h-offset)/(cycle/2)+.5);
+  const nL=offset+cycle/2*(Math.floor((h-offset)/(cycle/2))+.5);
+  ST.nextHigh=fmtH(nH%24);ST.nextLow=fmtH(nL%24);
+  document.getElementById('tHt').textContent=ST.tideHt+' ft';
+  document.getElementById('tPh').textContent=ST.tidePhase;
+  document.getElementById('tNH').textContent=ST.nextHigh;
+  document.getElementById('tFlow').textContent=ST.tideFlow;
+  document.getElementById('tNL').textContent=ST.nextLow;
+  document.getElementById('alT').textContent=`TIDE: ${ST.tideHt}ft ${ST.tidePhase} (${tt.label} computed)`;
+  drawTide(null,now);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// WEATHER — Open-Meteo
+// ══════════════════════════════════════════════════════════════════
+async function fetchWeather(){
+  // Known-good NWS land coordinates (airport stations) per region.
+  // These always resolve correctly — no water/land detection needed.
+  // Forecast zones from these stations cover the entire fishing region.
+  var NWS_COORDS = {
+    keys:  {lat:'24.5561', lon:'-81.7594', label:'NWS Key West (KEYW)'},
+    pine:  {lat:'26.5362', lon:'-81.7552', label:'NWS Fort Myers (KFMY)'},
+  };
+
+  var nwsCfg = NWS_COORDS[ST.region];
+
+  if(nwsCfg){
+    try{
+      // Step 1: resolve grid point
+      var ptR = await fetch(
+        'https://api.weather.gov/points/'+nwsCfg.lat+','+nwsCfg.lon,
+        {headers:{'User-Agent':'B2FlatsStalker/1.0','Accept':'application/geo+json'}}
+      );
+      if(!ptR.ok) throw new Error('NWS points '+ptR.status);
+      var ptD = await ptR.json();
+      var props = ptD.properties;
+      if(!props||!props.forecast) throw new Error('No forecast URL');
+
+      // Step 2: fetch 7-day forecast
+      var fR = await fetch(props.forecast,
+        {headers:{'User-Agent':'B2FlatsStalker/1.0','Accept':'application/geo+json'}}
+      );
+      if(!fR.ok) throw new Error('NWS forecast '+fR.status);
+      var fD = await fR.json();
+      var periods = fD.properties && fD.properties.periods;
+      if(!periods||periods.length<4) throw new Error('Too few periods');
+
+      // Step 3: fetch current observations from nearest station
+      if(props.observationStations){
+        try{
+          var osR = await fetch(props.observationStations,
+            {headers:{'User-Agent':'B2FlatsStalker/1.0'}});
+          var osD = await osR.json();
+          var stnId = osD.features&&osD.features[0]&&
+            osD.features[0].properties&&osD.features[0].properties.stationIdentifier;
+          if(stnId){
+            var obR = await fetch(
+              'https://api.weather.gov/stations/'+stnId+'/observations/latest',
+              {headers:{'User-Agent':'B2FlatsStalker/1.0'}}
+            );
+            var obD = await obR.json();
+            var ob = obD.properties;
+            if(ob){
+              if(ob.windSpeed&&ob.windSpeed.value!=null)
+                ST.windSpd=Math.round(ob.windSpeed.value*1.94384);
+              if(ob.windDirection&&ob.windDirection.value!=null)
+                ST.windDir=Math.round(ob.windDirection.value);
+              if(ob.windGust&&ob.windGust.value!=null)
+                ST.windGust=Math.round(ob.windGust.value*1.94384);
+              if(ob.barometricPressure&&ob.barometricPressure.value!=null)
+                ST.pressure=+(ob.barometricPressure.value*0.0002953).toFixed(2);
+              if(ob.temperature&&ob.temperature.value!=null)
+                ST.airTemp=Math.round(ob.temperature.value*9/5+32);
+            }
+          }
+        }catch(e){ /* observations optional */ }
+      }
+
+      // Step 4: build daily forecast array from daytime periods
+      var dirMap={N:0,NNE:22,NE:45,ENE:67,E:90,ESE:112,SE:135,
+        SSE:157,S:180,SSW:202,SW:225,WSW:247,W:270,WNW:292,NW:315,NNW:337};
+      var daily=[];
+      for(var i=0;i<periods.length&&daily.length<7;i++){
+        var p=periods[i];
+        if(!p.isDaytime) continue;
+        var night=periods[i+1]&&!periods[i+1].isDaytime?periods[i+1]:null;
+        var wm=p.windSpeed?p.windSpeed.match(/(\d+)/):null;
+        var wSpd=wm?Math.round(parseInt(wm[1])*0.868):10;
+        var wDirDeg=dirMap[p.windDirection||'SE']||135;
+        var sf=(p.shortForecast||'').toLowerCase();
+        var code=sf.includes('thunder')?95:
+          sf.includes('shower')||sf.includes('rain')?61:
+          sf.includes('drizzle')?51:sf.includes('fog')?45:
+          sf.includes('mostly cloudy')||sf.includes('overcast')?3:
+          sf.includes('partly')?1:0;
+        daily.push({
+          date:p.startTime?p.startTime.slice(0,10):'',
+          hi:p.temperature||82,
+          lo:night?night.temperature:70,
+          code:code,
+          windSpd:wSpd,
+          windDir:wDirDeg,
+          precip:'0.0',
+          nwsShort:p.shortForecast||'',
+          nwsDetail:p.detailedForecast||''
+        });
+      }
+      if(daily.length>=3){
+        ST.forecast=daily;
+        setSrc('srcWx','WEATHER: '+nwsCfg.label+' ✓','ok');
+        renderForecast();
+        return true;
+      }
+      throw new Error('Not enough forecast days');
+
+    }catch(e){
+      console.warn('NWS failed:',e.message,'— trying Open-Meteo');
+    }
+  }
+
+  // Fallback: Open-Meteo (international + NWS failure)
+  try{
+    var url='https://api.open-meteo.com/v1/forecast?latitude='+ST.lat.toFixed(4)+
+      '&longitude='+ST.lon.toFixed(4)+
+      '&current=temperature_2m,wind_speed_10m,wind_direction_10m,wind_gusts_10m,surface_pressure,weather_code'+
+      '&daily=weather_code,temperature_2m_max,temperature_2m_min,wind_speed_10m_max,'+
+      'wind_direction_10m_dominant,precipitation_sum,precipitation_probability_max,wind_gusts_10m_max'+
+      '&temperature_unit=fahrenheit&wind_speed_unit=kn&timezone=auto&forecast_days=7';
+    var r=await fetch(url);
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    var d=await r.json();
+    var cur=d.current;
+    if(cur){
+      if(!ST.windSpd||ST.windSpd<1) ST.windSpd=Math.round(cur.wind_speed_10m)||12;
+      if(!ST.windDir)  ST.windDir=Math.round(cur.wind_direction_10m)||135;
+      if(!ST.windGust) ST.windGust=Math.round(cur.wind_gusts_10m)||ST.windSpd+4;
+      if(!ST.airTemp)  ST.airTemp=Math.round(cur.temperature_2m)||82;
+      if(cur.surface_pressure&&!ST.pressure)
+        ST.pressure=+(cur.surface_pressure*0.02953).toFixed(2);
+    }
+    if(d.daily){
+      ST.forecast=d.daily.time.map(function(t,i){
+        return{
+          date:t,
+          hi:Math.round(d.daily.temperature_2m_max[i]),
+          lo:Math.round(d.daily.temperature_2m_min[i]),
+          code:d.daily.weather_code[i],
+          windSpd:Math.round(d.daily.wind_speed_10m_max[i]),
+          windDir:Math.round(d.daily.wind_direction_10m_dominant[i]),
+          precip:(d.daily.precipitation_sum[i]||0).toFixed(2),
+          nwsShort:'', nwsDetail:''
+        };
+      });
+    }
+    setSrc('srcWx','WEATHER: Open-Meteo ✓','ok');
+    renderForecast();
+    return true;
+  }catch(e){
+    setSrc('srcWx','WEATHER: COMPUTED','warn');
+    return false;
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// WATER TEMP — NOAA CO-OPS first, then NDBC buoy
+// ══════════════════════════════════════════════════════════════════
+async function fetchWaterTemp(stationId){
+  // Try NOAA CO-OPS water_temperature for the tide station
+  try{
+    const r=await fetch(`https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?date=latest&station=${stationId}&product=water_temperature&units=english&time_zone=gmt&application=B2FlatsStalker&format=json`);
+    const d=await r.json();
+    if(d.data&&d.data.length){
+      const t=parseFloat(d.data[0].v);
+      if(t>40&&t<110){ST.waterTemp=Math.round(t);setSrc('srcTemp',`WATER TEMP: NOAA ${stationId} ✓`,'ok');document.getElementById('tempSource').textContent=`NOAA Station ${stationId} — live sensor ✓`;return true;}
+    }
+  }catch(e){}
+  // Try nearest NDBC buoy
+  let best=BUOYS[0],bestD=9999;
+  BUOYS.forEach(b=>{const d=Math.hypot(ST.lat-b.lat,ST.lon-b.lon);if(d<bestD){bestD=d;best=b;}});
+  try{
+    const r=await fetch(`https://www.ndbc.noaa.gov/data/realtime2/${best.id}.txt`);
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const txt=await r.text();
+    const lines=txt.split('\n').filter(l=>l.trim()&&!l.startsWith('#'));
+    if(lines.length<2)throw new Error('No data');
+    const hdrs=lines[0].trim().split(/\s+/);
+    const row=lines[1].trim().split(/\s+/);
+    const get=n=>{const i=hdrs.indexOf(n);return i>=0&&row[i]!=='MM'?parseFloat(row[i]):null;};
+    const wtmp=get('WTMP'),atmp=get('ATMP'),wspd=get('WSPD'),wvht=get('WVHT');
+    if(wtmp&&wtmp>0&&wtmp<40){ST.waterTemp=Math.round(wtmp*9/5+32);setSrc('srcTemp',`WATER TEMP: NDBC ${best.id} ✓`,'ok');document.getElementById('tempSource').textContent=`NDBC Buoy ${best.id} (${best.name}) — live ✓`;}
+    if(atmp&&atmp>0&&atmp<50)ST.airTemp=Math.round(atmp*9/5+32);
+    if(wspd)ST.windSpd=Math.max(ST.windSpd,Math.round(wspd*1.94384));
+    if(wvht)ST.waveHt=wvht.toFixed(1);
+    return true;
+  }catch(e){
+    const mo=new Date().getMonth(),sum=mo>=5&&mo<=9;
+    ST.waterTemp=ST.lat>25?(sum?84:71):(sum?83:77);
+    setSrc('srcTemp','WATER TEMP: SEASONAL EST','warn');
+    document.getElementById('tempSource').textContent='Seasonal estimate — no buoy reached';
+    return false;
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// LUNAR
+// ══════════════════════════════════════════════════════════════════
+function calcLunar(){
+  const diff=(new Date()-new Date('2000-01-06T18:14:00Z'))/86400000;
+  const phase=((diff%29.530588853)+29.530588853)%29.530588853;
+  const illum=Math.round(50*(1-Math.cos(2*Math.PI*phase/29.530588853)));
+  ST.moonPhaseVal=phase;
+  ST.lunarScore=(phase<2.5||Math.abs(phase-14.77)<2)?1:(phase<7||phase>22)?.65:.35;
+  ST.permitBonus=phase<2.5||Math.abs(phase-14.77)<2;
+  let nm,emoji,bonus='';
+  if(phase<1.85){nm='NEW MOON';emoji='🌑';bonus='<span style="color:var(--grn);font-weight:700">◆ PRIME PERMIT — Max tidal coefficient</span>';}
+  else if(phase<7.38){nm='WAXING CRESCENT';emoji='🌒';}
+  else if(phase<9.22){nm='FIRST QUARTER';emoji='🌓';}
+  else if(phase<14.77){nm='WAXING GIBBOUS';emoji='🌔';}
+  else if(phase<16.61){nm='FULL MOON';emoji='🌕';bonus='<span style="color:var(--grn);font-weight:700">◆ PRIME PERMIT — Full moon crabs active</span>';}
+  else if(phase<22.15){nm='WANING GIBBOUS';emoji='🌖';}
+  else if(phase<23.99){nm='LAST QUARTER';emoji='🌗';}
+  else{nm='WANING CRESCENT';emoji='🌘';}
+  document.getElementById('moonNm').textContent=nm;
+  document.getElementById('moonIl').textContent=illum+'% illuminated';
+  document.getElementById('moonEm').textContent=emoji;
+  document.getElementById('moonBon').innerHTML=bonus;
+  document.getElementById('alM').textContent='MOON: '+nm;
+  setSrc('srcLunar','LUNAR: CALCULATED ✓','ok');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// SOLUNAR
+// ══════════════════════════════════════════════════════════════════
+function calcSolunar(){
+  const now=new Date();
+  const dy=Math.floor((now-new Date(now.getFullYear(),0,0))/86400000);
+  const mo=(dy*.966)%24,h=now.getHours()+now.getMinutes()/60;
+  [{h:mo%24},{h:(mo+6.2)%24},{h:(mo+12.4)%24},{h:(mo+18.6)%24}]
+    .sort((a,b)=>a.h-b.h)
+    .forEach((t,i)=>document.getElementById('s'+(i+1)).textContent=fmtH(t.h));
+  const nM=[mo,mo+12.4].map(m=>m<h?m+24:m).sort((a,b)=>a-b)[0];
+  document.getElementById('nextMaj').textContent=fmtH(nM%24);
+  document.getElementById('alS').textContent='NEXT MAJOR: '+fmtH(nM%24);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// SCORES
+// ══════════════════════════════════════════════════════════════════
+function calcScores(){
+  var hour=new Date().getHours();
+  var min=new Date().getMinutes();
+  var timeDecimal=hour+min/60;
+  var mp=ST.moonPhaseVal||14;
+
+  var lb=['SLOW','FAIR','GOOD','HOT','◆ PRIME ◆'];
+  var scoreLbl=function(s){return s<30?0:s<50?1:s<70?2:s<85?3:4;};
+
+  // ── TIDE factor ──
+  var tideMoving=ST.tideFlow==='STRONG'?1.0:
+                 ST.tideFlow==='MODERATE'?0.75:
+                 ST.tideFlow==='SLOW'?0.40:0.10;
+
+  // ── TIME OF DAY — granular for tarpon ──
+  var isPreDawn   = timeDecimal>=4.0  && timeDecimal<5.0;
+  var isDawn      = timeDecimal>=5.0  && timeDecimal<8.5;
+  var isMorning   = timeDecimal>=8.5  && timeDecimal<10.5;
+  var isMidDay    = timeDecimal>=10.5 && timeDecimal<15.0;
+  var isAfternoon = timeDecimal>=15.0 && timeDecimal<17.0;
+  var isDusk      = timeDecimal>=17.0 && timeDecimal<20.5;
+  var isEvening   = timeDecimal>=20.5 && timeDecimal<22.5;
+  var isNight     = timeDecimal>=22.5 || timeDecimal<4.0;
+
+  // ── TARPON SCORE ──
+  // Peak: dawn & dusk. Good: pre-dawn, morning, afternoon. Poor: mid-day, night.
+  var tpTimeFactor = isPreDawn   ? 0.80 :
+                     isDawn      ? 1.00 :
+                     isMorning   ? 0.65 :
+                     isMidDay    ? 0.30 :
+                     isAfternoon ? 0.55 :
+                     isDusk      ? 1.00 :
+                     isEvening   ? 0.60 :
+                                   0.20;  // night
+
+  var tpS=Math.round(((tideMoving*0.5)+(tpTimeFactor*0.5))*100);
+
+  var tpDesc = isPreDawn   ? 'PRE-DAWN — black/purple flies, start moving' :
+               isDawn      ? 'GOLDEN HOUR — prime window, dark flies' :
+               isMorning   ? 'MORNING — fish still moving, natural tones' :
+               isMidDay    ? 'MID-DAY — laid up, hard to bite, sight only' :
+               isAfternoon ? 'AFTERNOON — activity picking up' :
+               isDusk      ? 'GOLDEN HOUR — prime window, dark flies' :
+               isEvening   ? 'EVENING — late feeders, low-light patterns' :
+                             'NIGHT — limited visibility';
+
+  var tpTimeTag = isPreDawn||isEvening ? ['NEAR PRIME','ty'] :
+                  isDawn||isDusk       ? ['GOLDEN HOUR','tg'] :
+                  isMorning||isAfternoon ? ['ACTIVE','tb'] :
+                  isMidDay             ? ['MID-DAY','tr'] :
+                                         ['NIGHT','tr'];
+
+  // ── PERMIT SCORE ──
+  // Tidal turn is king. Moon phase secondary. Mid-day is fine for permit.
+  var isSlack  = ST.tideFlow==='SLACK';
+  var nearSlack= ST.tideFlow==='SLOW';
+  var pmTide   = isSlack?1.0:nearSlack?0.80:0.55;
+  var pmS=Math.round(((pmTide*0.65)+(ST.lunarScore*0.35))*100);
+
+  var pmDesc = isSlack   ? 'TIDAL TURN — cast NOW, dead-drop crab' :
+               nearSlack ? 'SLOWING — get ready, crab on bottom' :
+                           ST.tidePhase+' tide · moon '+Math.round(mp)+'d';
+  var pmTideTag = isSlack?['TIDAL TURN','tg']:nearSlack?['SLOWING','ty']:['MOVING TIDE','tr'];
+  var pmMoonTag = ST.lunarScore>0.7?['STRONG MOON','tg']:['WEAK MOON','tr'];
+
+  // ── BONEFISH SCORE ──
+  // Incoming tide + right water temp. Time of day matters less than tide.
+  var rising = ST.tidePhase==='RISING'?1.0:
+               ST.tidePhase==='HIGH SLACK'?0.35:0.15;
+  // Bonefish temp: 72-82°F prime, below 68°F or above 88°F poor
+  var bft = ST.waterTemp>=72&&ST.waterTemp<=82 ? 1.0  :
+            ST.waterTemp>=68&&ST.waterTemp<72   ? 0.55 :
+            ST.waterTemp>82&&ST.waterTemp<=86   ? 0.70 :
+            ST.waterTemp>86&&ST.waterTemp<=90   ? 0.40 :
+                                                  0.15;
+  var bfS=Math.round(((rising*0.65)+(bft*0.35))*100);
+  var bfDesc='Tide: '+ST.tidePhase+' · Water: '+ST.waterTemp+'°F · '+(bft>0.7?'Prime temp':bft>0.4?'Marginal temp':'Poor temp');
+  var bfTideTag=ST.tidePhase==='RISING'?['INCOMING TIDE','tb']:['CHECK TIDE','ty'];
+  var bfTempTag=bft>0.7?['PRIME TEMP','tg']:bft>0.4?['MARGINAL','ty']:['POOR TEMP','tr'];
+
+  // ── UPDATE UI ──
+  function upd(id,sc,det,tags){
+    var sEl=document.getElementById(id+'S'); if(sEl)sEl.textContent=sc+'%';
+    var lEl=document.getElementById(id+'L'); if(lEl)lEl.textContent=lb[scoreLbl(sc)];
+    var bEl=document.getElementById(id+'B'); if(bEl)bEl.style.width=sc+'%';
+    var dEl=document.getElementById(id+'D'); if(dEl)dEl.textContent=det;
+    var tEl=document.getElementById(id+'T'); if(tEl)tEl.innerHTML=tags.map(function(t){return'<span class="tag '+t[1]+'">'+t[0]+'</span>';}).join('');
+  }
+
+  upd('tp', tpS, tpDesc+' · Tide '+ST.tideFlow, [tpTimeTag, [tideMoving>0.5?'MOVING WATER':'SLACK WATER', tideMoving>0.5?'tb':'tr']]);
+  upd('pm', pmS, pmDesc, [pmTideTag, pmMoonTag]);
+  upd('bf', bfS, bfDesc,  [bfTideTag, bfTempTag]);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// WEATHER UI UPDATE
+// ══════════════════════════════════════════════════════════════════
+function updateUI(){
+  document.getElementById('wSpd').textContent=ST.windSpd;
+  document.getElementById('wDir').textContent=dirL(ST.windDir)+' '+ST.windDir+'°';
+  document.getElementById('wGust').textContent='GUST: '+ST.windGust+' kts';
+  document.getElementById('wDesc').textContent=bftD(ST.windSpd);
+  document.getElementById('wTemp').textContent=ST.waterTemp+'°';
+  document.getElementById('aTemp').textContent=ST.airTemp+'°F';
+  document.getElementById('wvHt').textContent=ST.waveHt+' ft';
+  const pct=Math.min(97,Math.max(3,(ST.waterTemp-60)/(95-60)*100));
+  document.getElementById('tNeedle').style.left=pct+'%';
+  let st,col;
+  if(ST.waterTemp<68){st='LETHARGIC';col='var(--red)';}
+  else if(ST.waterTemp<74){st='COOL — OK';col='var(--gold)';}
+  else if(ST.waterTemp<=84){st='◆ PRIME ◆';col='var(--grn)';}
+  else if(ST.waterTemp<=90){st='WARM — OK';col='var(--gold)';}
+  else{st='STRESSED';col='var(--red)';}
+  const ts=document.getElementById('tStat');ts.textContent=st;ts.style.background=col.replace(')',',0.15)').replace('var(','rgba(0,0,0,');
+  ts.style.color=col;ts.style.borderColor=col;
+  document.getElementById('presV').textContent=ST.pressure+' inHg';
+  document.getElementById('presH').textContent=Math.round(ST.pressure*33.8639)+' hPa';
+  const tEl=document.getElementById('presTr'),lEl=document.getElementById('presLb');
+  if(ST.pressureTrend==='rising'){tEl.textContent='↑';tEl.className='pres-tr rising';lEl.textContent='RISING';lEl.style.color='var(--grn)';document.getElementById('presAd').textContent='Rising pressure — fish may be selective. Work flat edges early.';}
+  else if(ST.pressureTrend==='falling'){tEl.textContent='↓';tEl.className='pres-tr falling';lEl.textContent='FALLING';lEl.style.color='var(--red)';document.getElementById('presAd').textContent='Falling baro — PRE-STORM FEEDING WINDOW OPEN. Fish aggressively NOW.';}
+  else{tEl.textContent='→';tEl.className='pres-tr steady';lEl.textContent='STEADY';lEl.style.color='var(--gold)';document.getElementById('presAd').textContent='Stable pressure — predictable behavior. Fish tidal windows and solunar majors.';}
+  document.getElementById('alWn').textContent='WIND: '+ST.windSpd+'kts '+dirL(ST.windDir);
+  document.getElementById('alB').textContent='BARO: '+ST.pressure+(ST.pressureTrend==='rising'?' ↑':ST.pressureTrend==='falling'?' ↓':' →');
+  document.getElementById('alW').textContent='WATER: '+ST.waterTemp+'°F';
+  document.getElementById('mapBar').textContent='📍 '+Math.abs(ST.lat).toFixed(4)+'°'+(ST.lat>0?'N':'S')+' '+Math.abs(ST.lon).toFixed(4)+'°'+(ST.lon<0?'W':'E')+' · '+((SPOTS[ST.region]&&SPOTS[ST.region].name)||'')+' · Data loaded ✓';
+  // Brief strip
+  var bTideEl=document.getElementById('bTide'); if(bTideEl){bTideEl.textContent=ST.tideHt+' ft'; bTideEl.style.color=ST.tidePhase==='RISING'?'var(--grn)':'var(--cyan)';}
+  var bPhEl=document.getElementById('bTidePhase'); if(bPhEl){bPhEl.textContent=ST.tidePhase; bPhEl.style.color=ST.tidePhase==='RISING'?'var(--grn)':'var(--cyan)';}
+  var bFlEl=document.getElementById('bTideFlow'); if(bFlEl) bFlEl.textContent=ST.tideFlow;
+  var bHiEl=document.getElementById('bNextHi'); if(bHiEl) bHiEl.textContent=ST.nextHigh||'--';
+  var bLoEl=document.getElementById('bNextLo'); if(bLoEl) bLoEl.textContent=ST.nextLow||'--';
+  var bWtEl=document.getElementById('bWater'); if(bWtEl){bWtEl.textContent=ST.waterTemp+'°'; bWtEl.style.color=ST.waterTemp>=74&&ST.waterTemp<=84?'var(--grn)':ST.waterTemp<68||ST.waterTemp>90?'var(--red)':'var(--gold)';}
+  var bWsEl=document.getElementById('bWaterStatus'); if(bWsEl) bWsEl.textContent=st;
+  var bWiEl=document.getElementById('bWind'); if(bWiEl){bWiEl.textContent=ST.windSpd; bWiEl.style.color=ST.windSpd<12?'var(--grn)':ST.windSpd<20?'var(--gold)':'var(--red)';}
+  var bDirEl=document.getElementById('bWindDir'); if(bDirEl) bDirEl.textContent=dirL(ST.windDir)+' '+ST.windDir+'°';
+  var bGuEl=document.getElementById('bWindGust'); if(bGuEl) bGuEl.textContent='G:'+ST.windGust+'kts';
+  drawCompass(ST.windDir,ST.windSpd);
+  updateFlyMatrix();drawBaro();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// AMENITIES
+// ══════════════════════════════════════════════════════════════════
+function haversineMi(la1,lo1,la2,lo2){
+  const R=3958.8,dLa=(la2-la1)*Math.PI/180,dLo=(lo2-lo1)*Math.PI/180;
+  const a=Math.sin(dLa/2)**2+Math.cos(la1*Math.PI/180)*Math.cos(la2*Math.PI/180)*Math.sin(dLo/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
+function renderAmenities(){
+  const list=AMENITIES[ST.region]||[];
+  const icons={ramp:'⛵',fuel:'⛽',bar:'🍹'};
+  const types={ramp:'BOAT RAMP',fuel:'FUEL DOCK (REC-90)',bar:'BAR / RESTAURANT'};
+  const sorted=list.map(a=>({...a,dist:haversineMi(ST.lat,ST.lon,a.lat,a.lon)})).sort((a,b)=>a.dist-b.dist);
+  if(!sorted.length){document.getElementById('amenList').innerHTML='<div style="font-family:Share Tech Mono,monospace;font-size:10px;color:var(--dim);padding:12px;text-align:center">No services found for this region.</div>';return;}
+  document.getElementById('amenList').innerHTML=sorted.map(a=>{
+    const col=a.dist<5?'var(--grn)':a.dist<15?'var(--gold)':' var(--red)';
+    const lbl=a.dist.toFixed(1)+'mi';
+    const url=a.url||'https://www.google.com/maps/search/'+encodeURIComponent(a.name);
+    return '<a href="'+url+'" target="_blank" style="text-decoration:none;display:block">'+
+      '<div class="amen-card '+a.type+'" style="cursor:pointer" onmouseover="this.style.opacity=\'.8\'" onmouseout="this.style.opacity=\'1\'">'+
+      '<div style="font-size:14px;flex-shrink:0;margin-top:2px">'+( icons[a.type]||'📍')+'</div>'+
+      '<div style="flex:1">'+
+        '<div class="amen-name" style="color:var(--cyan);text-decoration:underline;text-underline-offset:2px">'+a.name+' ↗</div>'+
+        '<div style="font-size:8px;color:var(--gold);font-family:Share Tech Mono,monospace;letter-spacing:1px">'+( types[a.type]||a.type.toUpperCase())+'</div>'+
+        '<div class="amen-detail">'+a.detail+'</div>'+
+      '</div>'+
+      '<div style="font-size:12px;color:'+col+';font-family:Orbitron,monospace;font-weight:900;white-space:nowrap;flex-shrink:0">'+lbl+'</div>'+
+      '</div></a>';
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// FLY MATRIX
+// ══════════════════════════════════════════════════════════════════
+function updateFlyMatrix(){
+  const h=new Date().getHours();
+  const isLow=h<8||h>18,isBright=h>=10&&h<=15,isStained=ST.windSpd>18;
+  const tKey=isLow?'dawn_dusk':isStained?'stained':'bright_clear';
+  const pKey=isLow?'low_light':isStained?'stained':'bright_clear';
+  const pF=FLIES.permit[pKey]||FLIES.permit.bright_clear,tF=FLIES.tarpon[tKey];
+  const cond=isLow?'LOW LIGHT / DAWN / DUSK':isStained?'CHOPPY / STAINED':isBright?'BRIGHT SUN / GIN CLEAR':'VARIABLE LIGHT';
+  document.getElementById('sunInd').textContent='◈ '+cond;
+  document.getElementById('sunInd').style.color=isLow?'var(--pur)':isStained?'var(--org)':'var(--gold)';
+  document.getElementById('sunDesc').textContent=isLow?'Dark patterns — adult tarpon see purple/blue/UV best (5 color cones).':isStained?'High-vis colors — tarpon locate by color+motion in turbid water.':'Natural tones — fish inspect in clear water. Long leaders, sparse patterns.';
+  const topT=tF.find(f=>f.best)||tF[0],topP=pF.find(f=>f.best)||pF[0];
+  document.getElementById('sunFly').textContent=topT.name+' · '+topP.name;
+  const flyHtml=arr=>arr.map(f=>`<div class="fly-row ${f.best?'best':''}"><div class="fly-sw" style="background:${f.color}"></div><div class="fly-nm">${f.name}${f.best?' ◆':''}</div><div class="fly-why">${f.why}</div></div>`).join('');
+  document.getElementById('flyMatrix').innerHTML=`
+    <div class="fly-cond"><div class="fly-cond-title">TARPON — ${isLow?'DARK PATTERNS':isStained?'HIGH-VIS':'NATURAL CRUSTACEAN'}</div>${flyHtml(tF)}</div>
+    <div class="fly-cond"><div class="fly-cond-title">PERMIT — ${isLow?'DARK CRAB':'NATURAL CRAB — DEAD DROP ONLY'}</div>${flyHtml(pF)}</div>`;
+}
+
+// ══════════════════════════════════════════════════════════════════
+// SPOTS
+// ══════════════════════════════════════════════════════════════════
+function renderSpots(){
+  const data=SPOTS[ST.region]||SPOTS.keys;
+  const cols={prime:'var(--gold)',hot:'var(--grn)',check:'var(--cyan)'};
+  const tc={TARPON:'tg',PERMIT:'ty',FLY:'tb'};
+  document.getElementById('spotList').innerHTML=data.spots.map(s=>`
+    <div class="spot-card ${s.status}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:5px">
+        <div class="spot-name">${s.name}</div>
+        <span style="font-size:9px;padding:2px 5px;border-radius:3px;background:rgba(0,0,0,.3);color:${cols[s.status]};font-family:'Share Tech Mono',monospace;font-weight:700;flex-shrink:0;border:1px solid ${cols[s.status]}">${s.status.toUpperCase()}</span>
+      </div>
+      <div class="spot-depth">◈ DEPTH: ${s.depth} · SIGHT-CASTING FLAT</div>
+      <div class="spot-det">${s.det}</div>
+      <div class="spot-badges">${s.badges.map(b=>`<span class="tag ${tc[b]||'tb'}">${b}</span>`).join('')}</div>
+    </div>`).join('');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// DEPTH ESTIMATE
+// ══════════════════════════════════════════════════════════════════
+function updateDepth(){
+  const flats=[{la:24.93,lo:-80.63,r:.3,d:2},{la:24.59,lo:-82.10,r:.4,d:2},{la:24.56,lo:-81.78,r:.3,d:2},{la:26.56,lo:-82.19,r:.4,d:3},{la:26.45,lo:-82.07,r:.35,d:2},{la:17.35,lo:-87.83,r:.5,d:2},{la:19.82,lo:-87.48,r:.4,d:2},{la:25.63,lo:-81.35,r:.5,d:2}];
+  let dep='--';
+  for(const f of flats){if(Math.hypot(ST.lat-f.la,ST.lon-f.lo)<f.r){dep=Math.max(1,Math.round(f.d+Math.hypot(ST.lat-f.la,ST.lon-f.lo)*10)).toString();break;}}
+  if(dep==='--')dep=Math.round(Math.abs(Math.sin(ST.lat*5)*Math.cos(ST.lon*3))*20+4).toString();
+  document.getElementById('dVal').textContent=dep;document.getElementById('alD').textContent='DEPTH: ~'+dep+' ft';
+}
+
+// ══════════════════════════════════════════════════════════════════
+// TIDE GRAPH
+// ══════════════════════════════════════════════════════════════════
+function drawTide(preds,now){
+  const cv=document.getElementById('tideC');if(!cv||!cv.offsetWidth)return;
+  const dpr=window.devicePixelRatio||1;
+  const H=cv.offsetHeight||80;
+  cv.width=cv.offsetWidth*dpr;cv.height=H*dpr;
+  const ctx=cv.getContext('2d');ctx.scale(dpr,dpr);const W=cv.offsetWidth;
+  ctx.fillStyle='#000';ctx.fillRect(0,0,W,H);
+  if(preds&&preds.length>1){
+    const t0=new Date(preds[0].t).getTime(),tN=new Date(preds[preds.length-1].t).getTime();
+    const vs=preds.map(p=>parseFloat(p.v));
+    const mn=Math.min(...vs),mx=Math.max(...vs),rng=mx-mn||0.1;
+    ctx.beginPath();
+    preds.forEach((p,i)=>{const x=((new Date(p.t)-t0)/(tN-t0))*W,y=H-6-((parseFloat(p.v)-mn)/rng)*(H-14);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});
+    ctx.strokeStyle='#00E5FF';ctx.lineWidth=2;ctx.stroke();
+    ctx.lineTo(W,H);ctx.lineTo(0,H);ctx.closePath();
+    const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,'rgba(0,229,255,.22)');g.addColorStop(1,'rgba(0,229,255,.02)');ctx.fillStyle=g;ctx.fill();
+    // Label only explicit NOAA H/L points; detect peaks for intl hourly data
+    preds.forEach(function(p,i){
+      if(!p.type){
+        if(i===0||i>=preds.length-1)return;
+        var vp=parseFloat(preds[i-1].v),vc=parseFloat(p.v),vn=parseFloat(preds[i+1].v);
+        if(isNaN(vp)||isNaN(vc)||isNaN(vn))return;
+        var isH=vc>vp&&vc>=vn,isL=vc<vp&&vc<=vn;
+        if(!isH&&!isL)return;
+        var lx=((new Date(p.t)-t0)/(tN-t0))*W,ly=H-6-((vc-mn)/rng)*(H-14);
+        ctx.fillStyle=isH?'#00C875':'#00E5FF';ctx.font='bold 7px Share Tech Mono,monospace';
+        ctx.fillText((isH?'H':'L')+vc.toFixed(1),Math.min(lx+2,W-30),isH?ly-4:ly+9);
+        return;
+      }
+      var lx=((new Date(p.t)-t0)/(tN-t0))*W,ly=H-6-((parseFloat(p.v)-mn)/rng)*(H-14);
+      ctx.fillStyle=p.type==='H'?'#00C875':'#00E5FF';ctx.font='bold 7px Share Tech Mono,monospace';
+      ctx.fillText(p.type+parseFloat(p.v).toFixed(1),Math.min(lx+2,W-30),p.type==='H'?ly-4:ly+9);
+    });
+    const nt=now.getTime();
+    if(nt>=t0&&nt<=tN){
+      const nx=((nt-t0)/(tN-t0))*W;let ny=H/2;
+      for(let i=0;i<preds.length-1;i++){
+        const t1=new Date(preds[i].t).getTime(),t2=new Date(preds[i+1].t).getTime();
+        if(nt>=t1&&nt<=t2){
+          const v=parseFloat(preds[i].v)+((nt-t1)/(t2-t1))*(parseFloat(preds[i+1].v)-parseFloat(preds[i].v));
+          ny=H-6-((v-mn)/rng)*(H-14);break;
+        }
+      }
+      // Vertical dashed line
+      ctx.strokeStyle='#FFD700';ctx.lineWidth=2;ctx.setLineDash([4,3]);
+      ctx.beginPath();ctx.moveTo(nx,0);ctx.lineTo(nx,H);ctx.stroke();ctx.setLineDash([]);
+      // Dot on curve — draw twice for glow effect
+      ctx.beginPath();ctx.arc(nx,ny,7,0,Math.PI*2);
+      ctx.fillStyle='rgba(255,215,0,0.25)';ctx.fill();
+      ctx.beginPath();ctx.arc(nx,ny,4.5,0,Math.PI*2);
+      ctx.fillStyle='#FFD700';ctx.fill();
+      ctx.strokeStyle='#000';ctx.lineWidth=1;ctx.stroke();
+      // NOW label with background
+      const label='◆ NOW';
+      ctx.font='bold 9px Share Tech Mono,monospace';
+      const lw=ctx.measureText(label).width;
+      const lx=Math.min(nx+8,W-lw-4);const ly=Math.max(ny-8,10);
+      ctx.fillStyle='rgba(0,0,0,0.6)';ctx.fillRect(lx-2,ly-9,lw+4,12);
+      ctx.fillStyle='#FFD700';ctx.fillText(label,lx,ly);
+    }
+  }else{
+    // Region-aware fallback wave
+    const tt=TIDE_TYPES[ST.region]||TIDE_TYPES.keys;
+    const offsets={keys:3,pine:5,belize:1.5,mexico:2.8};
+    const offset=offsets[ST.region]||3;
+    const ch=now.getHours()+now.getMinutes()/60;
+    ctx.beginPath();
+    for(let x=0;x<=W;x++){
+      const h=x/W*24,y=tt.rangeScale*1.5*Math.sin((h-offset)*Math.PI/(tt.cycleHrs/2))+tt.rangeScale*1.0;
+      const yp=H-6-(Math.max(0,y)/(tt.rangeScale*3.5))*(H-14);
+      x===0?ctx.moveTo(x,yp):ctx.lineTo(x,yp);
+    }
+    ctx.strokeStyle='#00E5FF';ctx.lineWidth=2;ctx.stroke();
+    ctx.lineTo(W,H);ctx.lineTo(0,H);ctx.closePath();
+    const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,'rgba(0,229,255,.2)');g.addColorStop(1,'rgba(0,229,255,.02)');ctx.fillStyle=g;ctx.fill();
+    const nx=ch/24*W,cv2=tt.rangeScale*1.5*Math.sin((ch-offset)*Math.PI/(tt.cycleHrs/2))+tt.rangeScale*1.0;
+    const cyp=H-6-(Math.max(0,cv2)/(tt.rangeScale*3.5))*(H-14);
+    ctx.strokeStyle='#FFD700';ctx.lineWidth=1.5;ctx.setLineDash([4,4]);ctx.beginPath();ctx.moveTo(nx,0);ctx.lineTo(nx,H);ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle='#FFD700';ctx.beginPath();ctx.arc(nx,cyp,4,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#FFD700';ctx.font='bold 8px Share Tech Mono,monospace';ctx.fillText('◆ NOW',nx+4,cyp-4);
+    // Label tide type
+    ctx.fillStyle='rgba(255,255,255,.3)';ctx.font='bold 8px Share Tech Mono,monospace';ctx.fillText(tt.label+' (computed)',4,H-2);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// COMPASS
+// ══════════════════════════════════════════════════════════════════
+function drawCompass(dir,spd){
+  const cv=document.getElementById('compC'),ctx=cv.getContext('2d'),cx=44,cy=44,r=41;
+  ctx.clearRect(0,0,88,88);
+  const isDark=document.body.className==='dark';
+  ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.strokeStyle=isDark?'#333':'#aaa';ctx.lineWidth=2;ctx.stroke();
+  ctx.beginPath();ctx.arc(cx,cy,r-6,0,Math.PI*2);ctx.strokeStyle=isDark?'#222':'#ccc';ctx.lineWidth=1;ctx.stroke();
+  [['N',0,'#E53E3E'],['E',90,'#888'],['S',180,'#888'],['W',270,'#888']].forEach(([l,d,c])=>{
+    const ra=(d-90)*Math.PI/180;ctx.fillStyle=c;ctx.font='bold 9px Orbitron,monospace';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(l,cx+(r-9)*Math.cos(ra),cy+(r-9)*Math.sin(ra));
+  });
+  for(let i=0;i<36;i++){const a=(i*10-90)*Math.PI/180,inn=i%9===0?r-15:r-11;ctx.strokeStyle=i%9===0?(isDark?'#555':'#aaa'):(isDark?'#2a2a2a':'#ddd');ctx.lineWidth=i%9===0?1.5:.7;ctx.beginPath();ctx.moveTo(cx+(r-6)*Math.cos(a),cy+(r-6)*Math.sin(a));ctx.lineTo(cx+inn*Math.cos(a),cy+inn*Math.sin(a));ctx.stroke();}
+  const ra=(dir-90)*Math.PI/180,al=20;
+  ctx.save();ctx.translate(cx,cy);ctx.rotate(ra);
+  ctx.strokeStyle='#00AACC';ctx.lineWidth=2.5;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(-al,0);ctx.lineTo(0,0);ctx.stroke();
+  ctx.fillStyle='#00AACC';ctx.beginPath();ctx.moveTo(al,0);ctx.lineTo(al-8,-5);ctx.lineTo(al-8,5);ctx.closePath();ctx.fill();
+  ctx.restore();
+  ctx.fillStyle=isDark?'#fff':'#222';ctx.font='bold 12px Orbitron,monospace';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(spd,cx,cy);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// BARO CHART
+// ══════════════════════════════════════════════════════════════════
+function drawBaro(){
+  const cv=document.getElementById('baroC');if(!cv||!cv.offsetWidth)return;
+  const dpr=window.devicePixelRatio||1;cv.width=cv.offsetWidth*dpr;cv.height=50*dpr;
+  const ctx=cv.getContext('2d');ctx.scale(dpr,dpr);const W=cv.offsetWidth,H=50;
+  const isDark=document.body.className==='dark';
+  ctx.fillStyle=isDark?'#000':'#f7f7f7';ctx.fillRect(0,0,W,H);
+  const data=ST.baroHist.length>2?ST.baroHist:Array.from({length:12},(_,i)=>29.9+Math.sin(i*.5)*.1);
+  const mn=Math.min(...data)-.02,mx=Math.max(...data)+.02;
+  const pts=data.map((v,i)=>({x:i/(data.length-1)*W,y:H-((v-mn)/(mx-mn))*(H-10)-5}));
+  ctx.beginPath();pts.forEach((p,i)=>i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y));
+  ctx.strokeStyle='#B7791F';ctx.lineWidth=2;ctx.stroke();
+  ctx.lineTo(W,H);ctx.lineTo(0,H);ctx.closePath();
+  const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,'rgba(183,121,31,.2)');g.addColorStop(1,'rgba(183,121,31,0)');ctx.fillStyle=g;ctx.fill();
+  const lp=pts[pts.length-1];ctx.beginPath();ctx.arc(lp.x,lp.y,3.5,0,Math.PI*2);ctx.fillStyle='#B7791F';ctx.fill();
+  ctx.fillStyle=isDark?'rgba(255,255,255,.4)':'rgba(0,0,0,.5)';ctx.font='bold 8px Share Tech Mono,monospace';ctx.textAlign='left';ctx.fillText(mx.toFixed(2),2,9);
+  ctx.textAlign='right';ctx.fillStyle='#B7791F';ctx.fillText('NOW',W-2,lp.y-4);
+}
+
+function setSrc(id,text,state){const el=document.getElementById(id);if(!el)return;el.className='sb '+(state==='ok'?'sb-ok':state==='err'?'sb-err':'sb-warn');el.textContent=text;}
+function fmtH(h){const H=Math.floor(h)%24,M=Math.round((h-Math.floor(h))*60);return(H%12||12)+':'+(M<10?'0':'')+M+(H>=12?' PM':' AM')}
+function dirL(d){return['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'][Math.round(d/22.5)%16]}
+function bftD(k){return k<4?'CALM':k<7?'LIGHT AIR':k<11?'LIGHT BREEZE':k<17?'MODERATE BREEZE':k<22?'FRESH BREEZE':'STRONG BREEZE'}
+
+// Logo ticks
+(function(){const g=document.getElementById('htk');if(!g)return;for(let i=0;i<60;i++){const a=i/60*Math.PI*2,r1=74,r2=i%5===0?67:71;const x1=100+r1*Math.cos(a),y1=100+r1*Math.sin(a),x2=100+r2*Math.cos(a),y2=100+r2*Math.sin(a);const ln=document.createElementNS('http://www.w3.org/2000/svg','line');ln.setAttribute('x1',x1.toFixed(1));ln.setAttribute('y1',y1.toFixed(1));ln.setAttribute('x2',x2.toFixed(1));ln.setAttribute('y2',y2.toFixed(1));ln.setAttribute('stroke','#FFD700');ln.setAttribute('stroke-width',i%5===0?'1.5':'0.6');ln.setAttribute('opacity',i%5===0?'1':'0.5');g.appendChild(ln);}})();
+
+// ══════════════════════════════════════════════════════════════════
+// WIND FLOW MAP — Windy-style 25mi radius canvas
+// Shows animated wind barbs/arrows across a local area map
+// ══════════════════════════════════════════════════════════════════
+// Wind animation state
+var _windAnimFrame = null;
+var _windAnimRunning = false;
+
+function startWindAnimation(){
+  if(_windAnimRunning) return;
+  _windAnimRunning = true;
+  function frame(){
+    drawWindFlowMap();
+    _windAnimFrame = requestAnimationFrame(frame);
+  }
+  _windAnimFrame = requestAnimationFrame(frame);
+}
+
+function stopWindAnimation(){
+  _windAnimRunning = false;
+  if(_windAnimFrame){ cancelAnimationFrame(_windAnimFrame); _windAnimFrame=null; }
+}
+
+function drawWindFlowMap(){
+  var cv = document.getElementById('windOverlay');
+  if(!cv) return;
+  var mapDiv = document.getElementById('map');
+  if(!mapDiv) return;
+  var wrap = cv.parentElement;
+  var W = (wrap||mapDiv).offsetWidth||300;
+  var H = (wrap||mapDiv).offsetHeight||(mapDiv.offsetHeight||270);
+  if(W < 20 || H < 20) return;
+  if(cv.width !== W) cv.width = W;
+  if(cv.height !== H) cv.height = H;
+
+  var ctx = cv.getContext('2d');
+  ctx.clearRect(0,0,W,H);
+
+  var spd = ST.windSpd||12, dir = ST.windDir||135;
+  if(spd < 1){ ctx.clearRect(0,0,W,H); return; }
+
+  // Animated offset — moves arrows in wind direction over time
+  var now = Date.now();
+  var pxPerSec = Math.max(20, spd * 3);  // pixels per second travel
+  var animOffset = (now / 1000 * pxPerSec) % 60;
+
+  var toAngle = ((dir + 180) % 360) * Math.PI / 180;
+  var dx = Math.sin(toAngle), dy = -Math.cos(toAngle);  // unit vector
+
+  // Wind color by speed (Windy-style ramp)
+  var wCol = spd < 5  ? 'rgba(100,210,255,0.80)' :
+             spd < 10 ? 'rgba(0,220,160,0.82)' :
+             spd < 15 ? 'rgba(80,240,80,0.85)' :
+             spd < 20 ? 'rgba(255,215,0,0.90)' :
+             spd < 25 ? 'rgba(255,120,0,0.94)' :
+                        'rgba(255,50,50,1.00)';
+
+  // Draw in a hex-offset grid; offset along wind direction creates animation
+  var spacing = 56;
+  var rows = Math.ceil(H / spacing) + 2;
+  var cols = Math.ceil(W / spacing) + 2;
+  var arrowLen = Math.max(12, Math.min(28, spd * 1.3));
+
+  for(var row = -1; row < rows; row++){
+    for(var col = -1; col < cols; col++){
+      // Base position with hex offset
+      var bx = col * spacing + (row % 2) * spacing * 0.5;
+      var by = row * spacing;
+
+      // Shift along wind direction by animated offset
+      bx += dx * animOffset;
+      by += dy * animOffset;
+
+      // Wrap to keep arrows in viewport
+      bx = ((bx % (spacing)) + spacing) % spacing + (col - (col % 1)) * spacing - spacing;
+      // Simpler: just let them go off edges and wrap
+      var wx = ((bx % W) + W) % W;
+      var wy = ((by % H) + H) % H;
+
+      // Fade near edges
+      var ex = Math.min(wx, W - wx) / (W * 0.12);
+      var ey = Math.min(wy, H - wy) / (H * 0.10);
+      var fade = Math.min(1.0, ex, ey);
+      if(fade <= 0.05) continue;
+
+      // Draw arrow at (wx, wy)
+      var ax = dx * arrowLen, ay = dy * arrowLen;
+      var sx = wx - ax * 0.4, sy = wy - ay * 0.4;
+      var ex2 = wx + ax * 0.5, ey2 = wy + ay * 0.5;
+
+      ctx.save();
+      ctx.globalAlpha = fade * 0.82;
+      ctx.strokeStyle = wCol;
+      ctx.fillStyle = wCol;
+      ctx.lineWidth = 1.6;
+      ctx.lineCap = 'round';
+
+      // Shaft
+      ctx.beginPath();
+      ctx.moveTo(sx, sy);
+      ctx.lineTo(ex2, ey2);
+      ctx.stroke();
+
+      // Arrowhead
+      var headLen = arrowLen * 0.28;
+      var nx = -dy * headLen * 0.38, ny = dx * headLen * 0.38;
+      ctx.beginPath();
+      ctx.moveTo(ex2, ey2);
+      ctx.lineTo(ex2 - ax * 0.38 + nx, ey2 - ay * 0.38 + ny);
+      ctx.lineTo(ex2 - ax * 0.38 - nx, ey2 - ay * 0.38 - ny);
+      ctx.closePath();
+      ctx.fill();
+
+      // Extra barb for >15kts
+      if(spd >= 15){
+        var bpx = wx - ax * 0.1, bpy = wy - ay * 0.1;
+        ctx.beginPath();
+        ctx.moveTo(bpx, bpy);
+        ctx.lineTo(bpx + nx * 2, bpy + ny * 2);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+  }
+
+  // Speed legend bottom-left
+  ctx.save();
+  ctx.globalAlpha = 0.88;
+  ctx.fillStyle = 'rgba(0,0,0,0.60)';
+  var legW = 108, legH = 20;
+  ctx.beginPath();
+  if(ctx.roundRect) ctx.roundRect(6, H-legH-4, legW, legH, 4);
+  else { ctx.rect(6, H-legH-4, legW, legH); }
+  ctx.fill();
+  ctx.font = 'bold 10px Share Tech Mono,monospace';
+  ctx.fillStyle = wCol;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(spd+'kts ' + dirL(dir), 12, H - legH*0.5 - 4);
+  ctx.restore();
+}
+
+
+// Call on map pan/zoom so overlay stays current
+function onMapMove(){ drawWindFlowMap(); }
+
+// ══════════════════════════════════════════════════════════════════
+// PALOLO WORM HATCH PREDICTOR
+// Science: hatches during full/new moon, May-Jun, falling tide 5-8:30pm,
+// water temp >76°F, calm conditions. Sources: Keys Fishing Report,
+// Rod&Barrel, Fly Fisherman, Key West Fishing Report, Tail Fly Fishing Mag
+// ══════════════════════════════════════════════════════════════════
+let paloloReportCount=0;
+
+function calcPalolo(){
+  const now=new Date();
+  const month=now.getMonth()+1; // 1-indexed
+  const day=now.getDate();
+  const hour=now.getHours()+now.getMinutes()/60;
+  const mp=ST.moonPhaseVal||14;
+
+  // ── DATE WINDOW ── May 15 – Jun 20
+  let W_time=0;
+  const inWindow=(month===5&&day>=15)||(month===5)||(month===6&&day<=20);
+  if(!inWindow){ updatePaloloUI(0,'OFF SEASON','inactive');return; }
+  // Score by proximity to season peak (late May = best)
+  if(month===5&&day>=20&&day<=31) W_time=1.0;
+  else if(month===6&&day<=10) W_time=0.9;
+  else if(month===5&&day>=15) W_time=0.7;
+  else W_time=0.5;
+
+  // ── LUNAR PHASE ── Full moon ±3 days OR New moon ±2 days
+  let W_lunar=0, lunarNote='';
+  const distFull=Math.abs(mp-14.77);
+  const distNew=Math.min(mp,29.53-mp);
+  if(distFull<=1){W_lunar=1.0;lunarNote='FULL MOON ◆ PEAK';}
+  else if(distFull<=3){W_lunar=0.8;lunarNote=`NEAR FULL (${Math.round(distFull)}d away)`;}
+  else if(distNew<=1){W_lunar=0.95;lunarNote='NEW MOON ◆ PEAK';}
+  else if(distNew<=2){W_lunar=0.75;lunarNote=`NEAR NEW (${Math.round(distNew)}d away)`;}
+  else{W_lunar=Math.max(0,0.3-Math.min(distFull,distNew)*0.05);lunarNote='Wrong moon phase';}
+
+  // ── TIDE WINDOW ── Falling tide between 17:00 and 20:30 local
+  let W_tide=0, tideNote='';
+  const inEveningWindow=hour>=17&&hour<=20.5;
+  const isFalling=ST.tidePhase==='FALLING';
+  const isStrongFall=isFalling&&(ST.tideFlow==='MODERATE'||ST.tideFlow==='STRONG');
+  if(inEveningWindow&&isStrongFall){W_tide=1.0;tideNote='FALLING EVENING TIDE ◆';}
+  else if(inEveningWindow&&isFalling){W_tide=0.8;tideNote='Falling tide in window';}
+  else if(inEveningWindow){W_tide=0.4;tideNote='In time window, wrong tide';}
+  else if(hour>=16&&hour<=21&&isFalling){W_tide=0.5;tideNote='Right tide, near window';}
+  else{W_tide=0.1;tideNote='Outside evening window';}
+
+  // ── BASE PROBABILITY ──
+  let P=(W_time*0.4)+(W_lunar*0.3)+(W_tide*0.3);
+
+  // ── TEMP PENALTY ── <76°F = 50% reduction
+  if(ST.waterTemp<76) P=P*0.5;
+
+  P=Math.round(P*100);
+
+  // ── UPDATE UI ──
+  const timeWindow=W_tide>0.7?`${Math.floor(hour)}:${String(Math.round((hour%1)*60)).padStart(2,'0')} – 8:30 PM`:'5:00 – 8:30 PM';
+  let state='inactive';
+  if(P>=85) state='active';
+  else if(P>=40) state='monitoring';
+
+  updatePaloloUI(P,`${lunarNote} · ${tideNote}`,state,timeWindow);
+
+  // Update detail panel
+  document.getElementById('pDateScore').textContent=`${Math.round(W_time*100)}%`;
+  document.getElementById('pDateScore').style.color=W_time>0.8?'var(--grn)':W_time>0.5?'var(--gold)':'var(--red)';
+  document.getElementById('pLunarScore').textContent=`${Math.round(W_lunar*100)}%`;
+  document.getElementById('pLunarScore').style.color=W_lunar>0.7?'var(--grn)':W_lunar>0.4?'var(--gold)':'var(--red)';
+  document.getElementById('pLunarNote').textContent=lunarNote;
+  document.getElementById('pTideScore').textContent=`${Math.round(W_tide*100)}%`;
+  document.getElementById('pTideScore').style.color=W_tide>0.7?'var(--grn)':W_tide>0.4?'var(--gold)':'var(--red)';
+
+  const tempOk=ST.waterTemp>=76;
+  document.getElementById('paloloSummary').textContent=[
+    `Date: ${month}/${day} — ${inWindow?'IN SEASON ✓':'OUT OF SEASON'}`,
+    `Moon: ${lunarNote}`,
+    `Tide: ${tideNote}`,
+    `Water temp: ${ST.waterTemp}°F — ${tempOk?'OK ✓':'Below 76°F threshold — 50% penalty applied'}`,
+    `Hatch probability: ${P}%${P>=85?' ← CRITICAL HATCH ALERT':''}`,
+    `Best time: 5:00–8:30 PM on falling tide near full/new moon`,
+    `Best spots: Bahia Honda Bridge, Channel 2, Channel 5, Long Key Bridge`,
+  ].join('\n');
+}
+
+function updatePaloloUI(pct,note,state,window=''){
+  const panel=document.getElementById('paloloPanel');
+  const icon=document.getElementById('paloloIcon');
+  const label=document.getElementById('paloloLabel');
+  const status=document.getElementById('paloloStatus');
+  const pctEl=document.getElementById('paloloPct');
+
+  pctEl.textContent=pct+'%';
+
+  if(state==='active'){
+    // State 3: HIGH CONTRAST ORANGE — HATCH ALERT
+    panel.style.borderColor='var(--org)';
+    panel.style.background='rgba(221,107,32,0.12)';
+    panel.style.animation='palolopulse 1s infinite';
+    icon.style.filter='none';
+    icon.style.fontSize='26px';
+    label.style.color='var(--org)';
+    label.textContent='PALOLO WORM';
+    status.style.color='var(--org)';
+    status.style.fontWeight='700';
+    status.textContent='HATCH LIKELY: '+(window||'5–8:30 PM');
+    pctEl.style.color='var(--org)';
+    // Add CSS animation if not there
+    if(!document.getElementById('paloloStyle')){
+      const s=document.createElement('style');
+      s.id='paloloStyle';
+      s.textContent='@keyframes palolopulse{0%,100%{box-shadow:0 0 0 0 rgba(221,107,32,.4)}50%{box-shadow:0 0 0 8px rgba(221,107,32,0)}}';
+      document.head.appendChild(s);
+    }
+  } else if(state==='monitoring'){
+    // State 2: TAN/GOLD — MONITORING
+    panel.style.borderColor='var(--gold)';
+    panel.style.background='rgba(183,121,31,0.08)';
+    panel.style.animation='none';
+    icon.style.filter='sepia(0.5) saturate(0.8)';
+    icon.style.fontSize='22px';
+    label.style.color='var(--gold)';
+    label.textContent='PALOLO WORM';
+    status.style.color='var(--gold)';
+    status.style.fontWeight='700';
+    status.textContent='MONITORING CONDITIONS';
+    pctEl.style.color='var(--gold)';
+  } else {
+    // State 1: GREYSCALE — INACTIVE / OFF SEASON
+    panel.style.borderColor='var(--bdr2)';
+    panel.style.background='var(--bg2)';
+    panel.style.animation='none';
+    icon.style.filter='grayscale(1) opacity(0.4)';
+    icon.style.fontSize='22px';
+    label.style.color='var(--dim)';
+    label.textContent='PALOLO WORM';
+    status.style.color='var(--dim)';
+    status.style.fontWeight='400';
+    status.textContent=pct>0?`${pct}% PROBABILITY`:'OUT OF SEASON';
+    pctEl.style.color='var(--dim)';
+  }
+}
+
+function showPaloloDetail(){
+  const d=document.getElementById('paloloDetail');
+  d.style.display=d.style.display==='none'?'block':'none';
+}
+
+function reportWormSpotted(){
+  paloloReportCount++;
+  const now=new Date();
+  const timeStr=now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:true});
+  document.getElementById('paloloReports').textContent=
+    `${paloloReportCount} report${paloloReportCount>1?'s':''} today\nLast: ${timeStr}\nNear ${Math.abs(ST.lat).toFixed(2)}°N`;
+  document.getElementById('paloloReports').style.color='var(--org)';
+  // Flash confirmation
+  const btn=document.querySelector('[onclick="reportWormSpotted()"]');
+  if(btn){const orig=btn.textContent;btn.textContent='✓ REPORTED — THANKS!';setTimeout(()=>btn.textContent=orig,2500);}
+}
+
+// ══════════════════════════════════════════════════════════════════
+// MAIN GO
+// ══════════════════════════════════════════════════════════════════
+
+// ══ WEATHER ICON HELPERS ══════════════════════════════════════════
+function wxIcon(code){
+  if(code===0)return'☀️';if(code<=2)return'🌤';if(code<=3)return'☁️';
+  if(code<=45)return'🌫';if(code<=57)return'🌦';if(code<=67)return'🌧';
+  if(code<=77)return'❄️';if(code<=82)return'🌦';if(code<=86)return'⛈';
+  return'⛈';
+}
+function wxDesc(code){
+  if(code===0)return'Clear';if(code<=2)return'Partly Cloudy';if(code<=3)return'Overcast';
+  if(code<=45)return'Foggy';if(code<=57)return'Drizzle';if(code<=67)return'Rain';
+  if(code<=77)return'Snow';if(code<=82)return'Showers';return'Thunderstorm';
+}
+function wxDetail(code,precip,wSpd){
+  var c='';
+  if(code>=95)c='Storms — stay off water';
+  else if(code>=80)c='Rain showers likely';
+  else if(code>=61)c='Steady rain — low viz';
+  else if(code<=1)c='Clear — prime sight fishing';
+  else if(code<=2)c='Partly cloudy — good viz';
+  else c='Overcast — harder sight fishing';
+  if(wSpd>20)c+=' · Rough conditions';
+  else if(wSpd>14)c+=' · Choppy water';
+  return c;
+}
+
+// ══ 3-DAY FORECAST RENDER ════════════════════════════════════════
+function renderForecast(){
+  var grid=document.getElementById('forecastGrid');
+  if(!grid)return;
+  if(!ST.forecast||!ST.forecast.length){
+    var now=new Date();
+    grid.innerHTML=['Today','Tomorrow','Day 3'].map(function(d,i){
+      var spd=Math.round((ST.windSpd||12)+Math.sin(i)*4);
+      var dir=ST.windDir||135;
+      return buildFcDay(d,null,ST.airTemp?Math.round(ST.airTemp-i*2):82,
+        ST.airTemp?Math.round(ST.airTemp-i*2-12):70,1,spd,dir,0,0);
+    }).join('');
+    return;
+  }
+  var labels=['Today','Tomorrow','Day 3'];
+  grid.innerHTML=ST.forecast.slice(0,3).map(function(f,i){
+    return buildFcDay(labels[i],f.date,f.hi,f.lo,f.code,f.windSpd,f.windDir,f.precip,i,f.nwsShort||'');
+  }).join('');
+}
+
+function buildFcDay(label,date,hi,lo,code,windSpd,windDir,precip,idx,nwsText){
+  var dateStr=date?new Date(date+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'}):label;
+  var wCol=windSpd<10?'#00C875':windSpd<18?'#FFD700':'#E53E3E';
+  var aRad=((windDir||0)*Math.PI/180);
+  var arrowX=(20+13*Math.sin(aRad)).toFixed(1);
+  var arrowY=(20-13*Math.cos(aRad)).toFixed(1);
+  return '<div class="fc-day" onclick="openFcastModal()" style="cursor:pointer" title="Tap for 7-day forecast">'+
+    '<div class="fc-date">'+label+'</div>'+
+    '<div style="font-size:8px;color:var(--dim);font-family:Share Tech Mono,monospace;margin-bottom:2px">'+dateStr+'</div>'+
+    '<div class="fc-icon">'+wxIcon(code||0)+'</div>'+'<div style="font-size:7px;color:var(--txt);font-family:Rajdhani,sans-serif;font-weight:700;margin:1px 0;line-height:1.2;min-height:14px">'+(nwsText||wxDesc(code||0))+'</div>'+
+    '<div class="fc-temps" style="margin-top:2px"><span style="color:var(--red);font-weight:900">'+hi+'°</span> <span style="color:var(--dim);font-size:10px">/</span> <span style="color:var(--cyan);font-weight:700">'+lo+'°</span></div>'+
+    '<div style="font-size:8px;color:var(--dim);font-family:Share Tech Mono,monospace;margin-top:2px">☔ '+(precip||0)+'"</div>'+
+    '<div style="margin-top:4px;display:flex;flex-direction:column;align-items:center">'+
+    '<div style="font-size:8px;color:'+wCol+';font-family:Share Tech Mono,monospace;font-weight:700;margin-bottom:2px">'+windSpd+' kts</div>'+
+    '<svg width="40" height="40" viewBox="0 0 40 40">'+
+    '<circle cx="20" cy="20" r="17" fill="none" stroke="rgba(100,116,139,0.4)" stroke-width="1.5"/>'+
+    '<text x="20" y="8" text-anchor="middle" fill="rgba(229,62,62,0.8)" font-size="7" font-family="monospace" font-weight="bold">N</text>'+
+    '<text x="20" y="36" text-anchor="middle" fill="rgba(100,116,139,0.5)" font-size="6" font-family="monospace">S</text>'+
+    '<text x="5" y="23" text-anchor="middle" fill="rgba(100,116,139,0.5)" font-size="6" font-family="monospace">W</text>'+
+    '<text x="35" y="23" text-anchor="middle" fill="rgba(100,116,139,0.5)" font-size="6" font-family="monospace">E</text>'+
+    '<line x1="20" y1="20" x2="'+arrowX+'" y2="'+arrowY+'" stroke="'+wCol+'" stroke-width="2.5" stroke-linecap="round"/>'+
+    '<circle cx="20" cy="20" r="2.5" fill="'+wCol+'"/>'+
+    '</svg>'+
+    '<div style="font-size:7px;color:var(--dim);font-family:Share Tech Mono,monospace">'+dirL(windDir||0)+'</div>'+
+    '</div></div>';
+}
+
+// ══ FORECAST MODAL ════════════════════════════════════════════════
+function openFcastModal(){
+  var m=document.getElementById('fcastModal');
+  if(!m)return;
+  m.style.display='block';
+  document.getElementById('fcastContent').style.display='none';
+  document.getElementById('fcastLoading').style.display='block';
+  document.getElementById('fcastLocation').textContent=
+    Math.abs(ST.lat).toFixed(4)+'°'+(ST.lat>0?'N':'S')+', '+
+    Math.abs(ST.lon).toFixed(4)+'°'+(ST.lon<0?'W':'E');
+  loadNOAAForecast();
+}
+function closeFcastModal(){
+  var m=document.getElementById('fcastModal');if(m)m.style.display='none';
+}
+
+async function loadNOAAForecast(){
+  try{
+    var url='https://api.open-meteo.com/v1/forecast?latitude='+ST.lat.toFixed(4)+
+      '&longitude='+ST.lon.toFixed(4)+
+      '&daily=weather_code,temperature_2m_max,temperature_2m_min,wind_speed_10m_max,'+
+      'wind_direction_10m_dominant,precipitation_sum,precipitation_probability_max,'+
+      'uv_index_max,wave_height_max,wind_gusts_10m_max'+
+      '&temperature_unit=fahrenheit&wind_speed_unit=kn&timezone=auto&forecast_days=7';
+    var r=await fetch(url);
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    var d=await r.json();
+    if(!d.daily)throw new Error('No daily data');
+    var days=d.daily;
+    var regionLabel={keys:'Florida Keys',pine:'Pine Island / Sanibel',
+      belize:'Belize',mexico:'Ascension Bay'}[ST.region]||'Selected Location';
+    document.getElementById('fcastLocation').textContent=regionLabel+
+      ' · '+Math.abs(ST.lat).toFixed(3)+'°'+(ST.lat>0?'N':'S')+' · Open-Meteo 7-Day';
+    var html=days.time.map(function(t,i){
+      var dt=new Date(t+'T12:00:00');
+      var dayName=i===0?'TODAY':i===1?'TOMORROW':dt.toLocaleDateString('en-US',{weekday:'short'}).toUpperCase();
+      var dStr=dt.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+      var code=days.weather_code[i]||0;
+      var hi=Math.round(days.temperature_2m_max[i]);
+      var lo=Math.round(days.temperature_2m_min[i]);
+      var wSpd=Math.round(days.wind_speed_10m_max[i]||0);
+      var wGust=Math.round(days.wind_gusts_10m_max[i]||0);
+      var wDir=days.wind_direction_10m_dominant[i]||0;
+      var precip=(days.precipitation_sum[i]||0).toFixed(2);
+      var precipPct=Math.round(days.precipitation_probability_max[i]||0);
+      var uv=Math.round(days.uv_index_max[i]||0);
+      var wave=days.wave_height_max&&days.wave_height_max[i]?(days.wave_height_max[i]*3.28).toFixed(1):null;
+      var wCol=wSpd<10?'#00C875':wSpd<18?'#FFD700':wSpd<25?'#DD6B20':'#E53E3E';
+      var uvCol=uv<=2?'#00C875':uv<=5?'#FFD700':uv<=7?'#DD6B20':'#E53E3E';
+      var pCol=precipPct<20?'var(--dim)':precipPct<50?'#FFD700':'#0369A1';
+      var fish=100;
+      if(wSpd>20)fish-=30;else if(wSpd>14)fish-=15;
+      if(precipPct>60)fish-=20;if(uv>8)fish-=10;
+      var fishLbl=fish>=80?'◆ PRIME':fish>=60?'GOOD':fish>=40?'FAIR':'TOUGH';
+      var fishCol=fish>=80?'#00C875':fish>=60?'#FFD700':fish>=40?'#DD6B20':'#E53E3E';
+      var aRad=wDir*Math.PI/180;
+      var arrowX=(20+12*Math.sin(aRad)).toFixed(1);
+      var arrowY=(20-12*Math.cos(aRad)).toFixed(1);
+      return '<div style="background:var(--bg3);border:1px solid var(--bdr);border-radius:8px;padding:10px 12px;margin-bottom:8px">'+
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">'+
+          '<div>'+
+            '<div style="font-family:Orbitron,sans-serif;font-size:10px;font-weight:700;color:var(--gold)">'+dayName+'</div>'+
+            '<div style="font-size:9px;color:var(--dim);font-family:Share Tech Mono,monospace">'+dStr+'</div>'+
+          '</div>'+
+          '<div style="text-align:right">'+
+            '<div style="font-size:10px;font-weight:700;font-family:Share Tech Mono,monospace;color:'+fishCol+'">'+fishLbl+'</div>'+
+            '<div style="font-family:Orbitron,sans-serif;font-size:15px;font-weight:900"><span style="color:var(--red)">'+hi+'°</span> <span style="color:var(--dim);font-size:11px">/</span> <span style="color:var(--cyan)">'+lo+'°</span></div>'+
+          '</div>'+
+        '</div>'+
+        '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">'+
+          '<div style="font-size:24px">'+wxIcon(code)+'</div>'+
+          '<div>'+
+            '<div style="font-size:11px;color:var(--txt);font-family:Rajdhani,sans-serif;font-weight:700">'+wxDesc(code)+'</div>'+
+            '<div style="font-size:9px;color:var(--dim);font-family:Share Tech Mono,monospace;margin-top:1px">'+wxDetail(code,precipPct,wSpd)+'</div>'+
+          '</div>'+
+        '</div>'+
+        '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px">'+
+          '<div style="background:var(--bg2);border:1px solid var(--bdr);border-radius:5px;padding:5px;display:flex;align-items:center;gap:5px">'+
+            '<svg width="36" height="36" viewBox="0 0 40 40">'+
+            '<circle cx="20" cy="20" r="17" fill="none" stroke="rgba(100,116,139,0.35)" stroke-width="1.5"/>'+
+            '<text x="20" y="8" text-anchor="middle" fill="rgba(229,62,62,0.7)" font-size="6" font-family="monospace">N</text>'+
+            '<line x1="20" y1="20" x2="'+arrowX+'" y2="'+arrowY+'" stroke="'+wCol+'" stroke-width="2.5" stroke-linecap="round"/>'+
+            '<circle cx="20" cy="20" r="2.5" fill="'+wCol+'"/>'+
+            '</svg>'+
+            '<div>'+
+              '<div style="font-size:14px;font-family:Orbitron,sans-serif;font-weight:900;color:'+wCol+'">'+wSpd+'</div>'+
+              '<div style="font-size:8px;color:var(--dim);font-family:Share Tech Mono,monospace">kts '+dirL(wDir)+'</div>'+
+              '<div style="font-size:8px;color:var(--dim);font-family:Share Tech Mono,monospace">G:'+wGust+'</div>'+
+            '</div>'+
+          '</div>'+
+          '<div style="background:var(--bg2);border:1px solid var(--bdr);border-radius:5px;padding:5px;text-align:center">'+
+            '<div style="font-size:16px;margin-bottom:1px">🌧</div>'+
+            '<div style="font-size:12px;font-family:Orbitron,sans-serif;font-weight:900;color:'+pCol+'">'+precipPct+'%</div>'+
+            '<div style="font-size:8px;color:var(--dim);font-family:Share Tech Mono,monospace">'+precip+'"</div>'+
+          '</div>'+
+          '<div style="background:var(--bg2);border:1px solid var(--bdr);border-radius:5px;padding:5px;text-align:center">'+
+            '<div style="font-size:9px;color:'+uvCol+';font-family:Share Tech Mono,monospace;font-weight:700;margin-bottom:2px">UV '+uv+'</div>'+
+            (wave?'<div style="font-size:12px;font-family:Orbitron,sans-serif;font-weight:900;color:var(--cyan)">'+wave+'</div><div style="font-size:8px;color:var(--dim);font-family:Share Tech Mono,monospace">wave ft</div>':'<div style="font-size:18px">☀️</div>')+
+          '</div>'+
+        '</div>'+
+      '</div>';
+    }).join('');
+    document.getElementById('fcastContent').innerHTML=html;
+    document.getElementById('fcastLoading').style.display='none';
+    document.getElementById('fcastContent').style.display='block';
+  }catch(e){
+    document.getElementById('fcastLoading').textContent='Could not load forecast: '+e.message;
+    console.warn('Forecast error:',e);
+  }
+}
+
+// ══ INTERNATIONAL TIDES (Open-Meteo FES2022) ════════════════════
+async function fetchIntlTides(lat,lon,stationName){
+  var url='https://marine-api.open-meteo.com/v1/marine?latitude='+lat+'&longitude='+lon+'&hourly=sea_level_height_msl&timezone=auto&forecast_days=1';
+  try{
+    var r=await fetch(url);
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    var d=await r.json();
+    if(!d.hourly||!d.hourly.sea_level_height_msl)throw new Error('No tidal data');
+    var now=new Date();
+    var nowHour=now.getHours();
+    var heights=d.hourly.sea_level_height_msl;
+    var hFt=heights.map(function(h){return h!=null?(h*3.28084).toFixed(2):null;});
+    var curHt=hFt[nowHour]||hFt[Math.min(nowHour,hFt.length-1)]||'1.0';
+    ST.tideHt=parseFloat(curHt).toFixed(1);
+    var nH=null,nL=null;
+    for(var i=nowHour+1;i<hFt.length-1;i++){
+      if(!hFt[i])continue;
+      var vp=parseFloat(hFt[i-1]),vc=parseFloat(hFt[i]),vn=parseFloat(hFt[i+1]);
+      if(vc>vp&&vc>=vn&&!nH)nH={t:i,v:curHt};
+      if(vc<vp&&vc<=vn&&!nL)nL={t:i,v:hFt[i]};
+      if(nH&&nL)break;
+    }
+    var prev=parseFloat(hFt[Math.max(0,nowHour-1)]||curHt);
+    var curr=parseFloat(curHt);
+    ST.tidePhase=curr>prev?'RISING':'FALLING';
+    var diff=Math.abs(curr-prev);
+    ST.tideFlow=diff<0.02?'SLACK':diff<0.10?'SLOW':diff<0.20?'MODERATE':'STRONG';
+    ST.nextHigh=nH?fmtH(nH.t):'--';
+    ST.nextLow=nL?fmtH(nL.t):'--';
+    var preds=hFt.map(function(v,i){
+      return{t:new Date(now.getFullYear(),now.getMonth(),now.getDate(),i).toISOString(),v:v||'0'};
+    });
+    ST.tidePreds=preds;
+    document.getElementById('tHt').textContent=ST.tideHt+' ft';
+    document.getElementById('tPh').textContent=ST.tidePhase;
+    document.getElementById('tNH').textContent=ST.nextHigh;
+    document.getElementById('tFlow').textContent=ST.tideFlow;
+    document.getElementById('tNL').textContent=ST.nextLow;
+    document.getElementById('alT').textContent='TIDE: '+ST.tideHt+'ft '+ST.tidePhase+' · '+stationName;
+    setSrc('srcTide','TIDE: '+stationName+' (FES2022) ✓','ok');
+    drawTide(preds,now);
+    return true;
+  }catch(e){
+    console.warn('Intl tide error:',e.message);
+    setSrc('srcTide','TIDE: COMPUTED (intl)','warn');
+    tideFallback();
+    return false;
+  }
+}
+
+// ══ PALOLO TOGGLE ════════════════════════════════════════════════
+function togglePalolo(){
+  var d=document.getElementById('paloloDetail');
+  if(d)d.style.display=(d.style.display==='block')?'none':'block';
+}
+function closePalolo(){
+  var d=document.getElementById('paloloDetail');if(d)d.style.display='none';
+}
+
+async function go(){
+  if(ST.busy)return;ST.busy=true;
+  try{
+    const stn=nearestStation(ST.lat,ST.lon);
+    // Fetch all in parallel
+    const[wxOk,tideOk]=await Promise.all([fetchWeather(),fetchNOAATides(stn.id)]);
+    await fetchWaterTemp(stn.id);
+    calcLunar();calcSolunar();calcPalolo();
+    updateUI();calcScores();
+    renderSpots();renderAmenities();updateFlyMatrix();
+    renderForecast();
+    drawWindFlowMap();
+    if(!tideOk)tideFallback();
+  }catch(e){console.error('go():',e);}
+  ST.busy=false;
+}
+
+// Clock
+setInterval(()=>{document.getElementById('clk').textContent=new Date().toLocaleString('en-US',{weekday:'short',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true});},1000);
+
+// Boot
+window.addEventListener('DOMContentLoaded',()=>{
+  applyTheme(getAutoTheme());
+  initMap();detectRegion();updateDepth();renderSpots();renderAmenities();
+  calcLunar();calcSolunar();calcPalolo();renderForecast();
+  setTimeout(go,500);
+  // Start continuous wind animation
+  setTimeout(function(){ startWindAnimation(); }, 800);
+  setInterval(go,600000);
+  window.addEventListener('resize',()=>{
+    drawTide(ST.tidePreds,new Date());drawBaro();drawWindFlowMap();
+    if(map)setTimeout(()=>map.invalidateSize(),200);
+  });
+});
+</script>
+</body>
+</html>
