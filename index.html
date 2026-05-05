@@ -912,7 +912,7 @@ const FLIES={
 // ══════════════════════════════════════════════════════════════════
 const ST={
   lat:24.6450,lon:-81.5333,region:'keys',
-  waterTemp:78,airTemp:82,windSpd:12,windDir:135,windGust:16,
+  waterTemp:78,airTemp:82,windSpd:0,windDir:135,windGust:0,
   waveHt:0.8,pressure:30.12,pressureTrend:'steady',
   moonPhaseVal:14,lunarScore:.35,permitBonus:false,
   baroHist:[],tidePhase:'RISING',tideFlow:'MODERATE',
@@ -1271,6 +1271,16 @@ async function fetchWeather(){
       }
       if(daily.length>=3){
         ST.forecast=daily;
+          // Fetch Open-Meteo current wind (NWS forecast = daily max, not current)
+          try{
+            var cwR=await fetch('https://api.open-meteo.com/v1/forecast?latitude='+ST.lat.toFixed(4)+'&longitude='+ST.lon.toFixed(4)+'&current=wind_speed_10m,wind_direction_10m,wind_gusts_10m&wind_speed_unit=kn&timezone=auto&forecast_days=1');
+            var cwD=await cwR.json();
+            if(cwD.current){
+              if(cwD.current.wind_speed_10m!=null)ST.windSpd=Math.round(cwD.current.wind_speed_10m);
+              if(cwD.current.wind_direction_10m!=null)ST.windDir=Math.round(cwD.current.wind_direction_10m);
+              if(cwD.current.wind_gusts_10m!=null)ST.windGust=Math.round(cwD.current.wind_gusts_10m);
+            }
+          }catch(e){}
         setSrc('srcWx','WEATHER: '+nwsCfg.label+' ✓','ok');
         renderForecast();
         return true;
@@ -1295,10 +1305,11 @@ async function fetchWeather(){
     var d=await r.json();
     var cur=d.current;
     if(cur){
-      if(!ST.windSpd||ST.windSpd<1) ST.windSpd=Math.round(cur.wind_speed_10m)||12;
-      if(!ST.windDir)  ST.windDir=Math.round(cur.wind_direction_10m)||135;
-      if(!ST.windGust) ST.windGust=Math.round(cur.wind_gusts_10m)||ST.windSpd+4;
-      if(!ST.airTemp)  ST.airTemp=Math.round(cur.temperature_2m)||82;
+      // Always update wind from Open-Meteo current (reliable, already in kts)
+      if(cur.wind_speed_10m!=null) ST.windSpd=Math.round(cur.wind_speed_10m)||0;
+      if(cur.wind_direction_10m!=null) ST.windDir=Math.round(cur.wind_direction_10m);
+      if(cur.wind_gusts_10m!=null) ST.windGust=Math.round(cur.wind_gusts_10m);
+      if(!ST.airTemp&&cur.temperature_2m!=null) ST.airTemp=Math.round(cur.temperature_2m)||82;
       if(cur.surface_pressure&&!ST.pressure)
         ST.pressure=+(cur.surface_pressure*0.02953).toFixed(2);
     }
