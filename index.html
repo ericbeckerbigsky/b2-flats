@@ -452,11 +452,11 @@ body.dark .sc.bf{background:#000d1a}
         <span class="stn-dist" id="stnDist"></span>
       </div>
     </div>
-    <canvas id="tideC" style="width:100%;height:80px;margin-top:6px;border-radius:4px;background:#000;display:block;cursor:crosshair" onclick="tideCanvasTap(event)">
+    <canvas id="tideC" style="width:100%;height:80px;margin-top:6px;border-radius:4px;background:#000;display:block;cursor:crosshair" onclick="tideCanvasTap(event)"></canvas>
     <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
-      <div style="font-size:8px;color:var(--dim);font-family:'Share Tech Mono',monospace">TAP CHART TO SELECT TIDE</div>
-      <button onclick="openStationModal()" style="background:transparent;border:1px solid var(--gold);color:var(--gold);font-family:'Share Tech Mono',monospace;font-size:8px;padding:3px 7px;border-radius:3px;cursor:pointer;touch-action:manipulation">&#9660; SELECT STATION</button>
-    </div></canvas>
+      <div style="font-size:8px;color:var(--dim);font-family:'Share Tech Mono',monospace">&#9658; TAP CHART TO INSPECT TIDE</div>
+      <button onclick="openStationModal()" style="background:transparent;border:1px solid var(--gold);color:var(--gold);font-family:'Share Tech Mono',monospace;font-size:9px;font-weight:700;padding:5px 10px;border-radius:4px;cursor:pointer;touch-action:manipulation;min-height:36px">&#9660; STATIONS</button>
+    </div>
     <span id="tHt" style="display:none">--</span><span id="tPh" style="display:none">--</span><span id="tNH" style="display:none">--</span><span id="tFlow" style="display:none">--</span><span id="tNL" style="display:none">--</span><span id="tStation" style="display:none">--</span>
   </div>
 
@@ -467,44 +467,6 @@ body.dark .sc.bf{background:#000d1a}
     <div class="fc-day"><div class="fc-date">--</div><div class="fc-icon">🌤</div><div class="fc-temps">--</div></div>
     <div class="fc-day"><div class="fc-date">--</div><div class="fc-icon">🌤</div><div class="fc-temps">--</div></div>
     <div class="fc-day"><div class="fc-date">--</div><div class="fc-icon">🌤</div><div class="fc-temps">--</div></div>
-  </div>
-</div>
-
-<!-- ═══ TIDE STATION SELECTOR MODAL ═══ -->
-<div id="stationModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:9100;background:rgba(0,0,0,0.92);overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px">
-  <div style="background:var(--bg2);border:2px solid var(--cyan);border-radius:10px;max-width:500px;margin:0 auto;padding:14px">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-      <div style="font-family:'Orbitron',monospace;font-size:11px;font-weight:900;color:var(--cyan);letter-spacing:1px">&#9670; TIDE STATION SELECTOR</div>
-      <button onclick="closeStationModal()" style="background:transparent;border:2px solid var(--bdr2);color:var(--txt);font-family:'Share Tech Mono',monospace;font-size:11px;padding:5px 12px;border-radius:4px;cursor:pointer;min-height:34px;touch-action:manipulation">&#10005; CLOSE</button>
-    </div>
-    <div style="font-size:9px;color:var(--dim);font-family:'Share Tech Mono',monospace;margin-bottom:10px">Select any Keys station to view its tide chart in a popup</div>
-    <div id="stationList" style="display:grid;gap:6px"></div>
-  </div>
-</div>
-
-<!-- ═══ STATION TIDE POPUP ═══ -->
-<div id="stationPopup" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:9200;background:rgba(0,0,0,0.95);padding:16px;overflow-y:auto">
-  <div style="background:var(--bg2);border:2px solid var(--cyan);border-radius:10px;max-width:500px;margin:0 auto;padding:14px">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-      <div style="font-family:'Orbitron',monospace;font-size:11px;font-weight:900;color:var(--cyan)" id="popupStationName">--</div>
-      <button onclick="closeStationPopup()" style="background:transparent;border:2px solid var(--bdr2);color:var(--txt);font-family:'Share Tech Mono',monospace;font-size:11px;padding:5px 12px;border-radius:4px;cursor:pointer;touch-action:manipulation">&#10005;</button>
-    </div>
-    <div style="font-size:9px;color:var(--dim);font-family:'Share Tech Mono',monospace;margin-bottom:6px" id="popupStationInfo">--</div>
-    <canvas id="popupTideC" style="width:100%;height:120px;background:#000;border-radius:6px;display:block"></canvas>
-    <div style="margin-top:8px;display:grid;grid-template-columns:repeat(4,1fr);gap:4px" id="popupTideStats"></div>
-  </div>
-</div>
-
-<!-- ═══ 7-DAY FORECAST MODAL ═══ -->
-<div id="fcastModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:9000;background:rgba(0,0,0,0.88);overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px">
-  <div style="background:var(--bg2);border:2px solid var(--gold);border-radius:10px;max-width:600px;margin:0 auto;padding:14px">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-      <div style="font-family:Orbitron,sans-serif;font-size:11px;font-weight:900;color:var(--gold);letter-spacing:1px">◈ 7-DAY FORECAST</div>
-      <button onclick="closeFcastModal()" style="background:transparent;border:2px solid var(--bdr2);color:var(--txt);font-family:Share Tech Mono,monospace;font-size:11px;padding:5px 12px;border-radius:4px;cursor:pointer;min-height:34px;touch-action:manipulation">✕ CLOSE</button>
-    </div>
-    <div style="font-size:9px;color:var(--dim);font-family:Share Tech Mono,monospace;margin-bottom:8px" id="fcastLocation">--</div>
-    <div id="fcastLoading" style="text-align:center;padding:20px;font-family:Share Tech Mono,monospace;font-size:11px;color:var(--dim)">Loading forecast...</div>
-    <div id="fcastContent" style="display:none"></div>
   </div>
 </div>
 
@@ -670,6 +632,46 @@ body.dark .sc.bf{background:#000d1a}
   
 </div>
 </div>
+
+<!-- ═══ TIDE STATION SELECTOR MODAL ═══ -->
+<div id="stationModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:9100;background:rgba(0,0,0,0.92);overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px">
+  <div style="background:var(--bg2);border:2px solid var(--cyan);border-radius:10px;max-width:500px;margin:0 auto;padding:14px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div style="font-family:'Orbitron',monospace;font-size:11px;font-weight:900;color:var(--cyan);letter-spacing:1px">&#9670; TIDE STATION SELECTOR</div>
+      <button onclick="closeStationModal()" style="background:transparent;border:2px solid var(--bdr2);color:var(--txt);font-family:'Share Tech Mono',monospace;font-size:11px;padding:5px 12px;border-radius:4px;cursor:pointer;min-height:34px;touch-action:manipulation">&#10005; CLOSE</button>
+    </div>
+    <div style="font-size:9px;color:var(--dim);font-family:'Share Tech Mono',monospace;margin-bottom:10px">Select any Keys station to view its tide chart in a popup</div>
+    <div id="stationList" style="display:grid;gap:6px"></div>
+  </div>
+</div>
+
+<!-- ═══ STATION TIDE POPUP ═══ -->
+<div id="stationPopup" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:9200;background:rgba(0,0,0,0.95);padding:16px;overflow-y:auto">
+  <div style="background:var(--bg2);border:2px solid var(--cyan);border-radius:10px;max-width:500px;margin:0 auto;padding:14px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <div style="font-family:'Orbitron',monospace;font-size:11px;font-weight:900;color:var(--cyan)" id="popupStationName">--</div>
+      <button onclick="closeStationPopup()" style="background:transparent;border:2px solid var(--bdr2);color:var(--txt);font-family:'Share Tech Mono',monospace;font-size:11px;padding:5px 12px;border-radius:4px;cursor:pointer;touch-action:manipulation">&#10005;</button>
+    </div>
+    <div style="font-size:9px;color:var(--dim);font-family:'Share Tech Mono',monospace;margin-bottom:6px" id="popupStationInfo">--</div>
+    <canvas id="popupTideC" style="width:100%;height:120px;background:#000;border-radius:6px;display:block"></canvas>
+    <div style="margin-top:8px;display:grid;grid-template-columns:repeat(4,1fr);gap:4px" id="popupTideStats"></div>
+  </div>
+</div>
+
+<!-- ═══ 7-DAY FORECAST MODAL ═══ -->
+<div id="fcastModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:9000;background:rgba(0,0,0,0.88);overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px">
+  <div style="background:var(--bg2);border:2px solid var(--gold);border-radius:10px;max-width:600px;margin:0 auto;padding:14px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div style="font-family:Orbitron,sans-serif;font-size:11px;font-weight:900;color:var(--gold);letter-spacing:1px">◈ 7-DAY FORECAST</div>
+      <button onclick="closeFcastModal()" style="background:transparent;border:2px solid var(--bdr2);color:var(--txt);font-family:Share Tech Mono,monospace;font-size:11px;padding:5px 12px;border-radius:4px;cursor:pointer;min-height:34px;touch-action:manipulation">✕ CLOSE</button>
+    </div>
+    <div style="font-size:9px;color:var(--dim);font-family:Share Tech Mono,monospace;margin-bottom:8px" id="fcastLocation">--</div>
+    <div id="fcastLoading" style="text-align:center;padding:20px;font-family:Share Tech Mono,monospace;font-size:11px;color:var(--dim)">Loading forecast...</div>
+    <div id="fcastContent" style="display:none"></div>
+  </div>
+</div>
+
+
 
 <script>
 // ══════════════════════════════════════════════════════════════════
@@ -1075,37 +1077,38 @@ function nearestStation(lat,lon){
 // ══════════════════════════════════════════════════════════════════
 async function fetchNOAATides(stationId){
   var now=new Date();
-  // Use LOCAL date (not UTC) — toISOString() returns UTC which can be wrong day
   var yr=now.getFullYear(),mo=String(now.getMonth()+1).padStart(2,'0'),dy=String(now.getDate()).padStart(2,'0');
   var today=yr+''+mo+''+dy;
-  // Tomorrow for overlap — ensures NOW marker works even near midnight
   var tom=new Date(now);tom.setDate(tom.getDate()+1);
   var yr2=tom.getFullYear(),mo2=String(tom.getMonth()+1).padStart(2,'0'),dy2=String(tom.getDate()).padStart(2,'0');
   var tomorrow=yr2+''+mo2+''+dy2;
+  // Fetch today+tomorrow for next-tide lookup, but chart shows TODAY ONLY
   var url='https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?begin_date='+today+'&end_date='+tomorrow+'&station='+stationId+'&product=predictions&datum=MLLW&time_zone=lst_ldt&interval=hilo&units=english&application=B2FlatsStalker&format=json';
   try{
     var r=await fetch(url);var d=await r.json();
     if(d.error||(!(d.predictions&&d.predictions.length)))throw new Error((d.error&&d.error.message)||'No data');
-    var preds=d.predictions;
+    var allPreds=d.predictions.map(function(p){return{t:p.t.replace(' ','T'),v:p.v,type:p.type};});
 
-    // Fix date parsing: NOAA returns "2026-04-30 06:15" — replace space with T
-    // so new Date() parses it as LOCAL time, not UTC
-    preds=preds.map(function(p){
-      return {t:p.t.replace(' ','T'), v:p.v, type:p.type};
-    });
+    // Split: chartPreds = today only (for display), allPreds used for next H/L lookup
+    var todayStr=yr+'-'+mo+'-'+dy;
+    var chartPreds=allPreds.filter(function(p){return p.t.startsWith(todayStr);});
+    // Need at least 2 points for chart — if <2 use first 4 of all preds
+    if(chartPreds.length<2) chartPreds=allPreds.slice(0,Math.min(4,allPreds.length));
 
-    ST.tidePreds=preds;
-    var curHt=1.0;
+    // Current tide height via interpolation
     var nt=now.getTime();
-    for(var i=0;i<preds.length-1;i++){
-      var t1=new Date(preds[i].t).getTime(),t2=new Date(preds[i+1].t).getTime();
+    var curHt=parseFloat(allPreds[0].v);
+    for(var i=0;i<allPreds.length-1;i++){
+      var t1=new Date(allPreds[i].t).getTime(),t2=new Date(allPreds[i+1].t).getTime();
       if(nt>=t1&&nt<=t2){
-        curHt=parseFloat(preds[i].v)+((nt-t1)/(t2-t1))*(parseFloat(preds[i+1].v)-parseFloat(preds[i].v));
+        curHt=parseFloat(allPreds[i].v)+((nt-t1)/(t2-t1))*(parseFloat(allPreds[i+1].v)-parseFloat(allPreds[i].v));
         break;
       }
     }
+
+    // Next high and low from ALL preds (including tomorrow)
     var nH=null,nL=null;
-    preds.forEach(function(p){
+    allPreds.forEach(function(p){
       if(new Date(p.t)>now){
         if(p.type==='H'&&!nH)nH=p;
         if(p.type==='L'&&!nL)nL=p;
@@ -1113,7 +1116,7 @@ async function fetchNOAATides(stationId){
     });
     ST.tidePhase=(nH&&(!nL||new Date(nH.t)<new Date(nL.t)))?'RISING':'FALLING';
     var lastEvt=null;
-    preds.forEach(function(p){if(new Date(p.t)<=now)lastEvt=p;});
+    allPreds.forEach(function(p){if(new Date(p.t)<=now)lastEvt=p;});
     if(lastEvt){
       var nextEvt=ST.tidePhase==='RISING'?nH:nL;
       if(nextEvt){
@@ -1124,15 +1127,16 @@ async function fetchNOAATides(stationId){
     ST.tideHt=curHt.toFixed(1);
     ST.nextHigh=nH?fmtTime(nH.t):'--';
     ST.nextLow=nL?fmtTime(nL.t):'--';
-    document.getElementById('tHt').textContent=ST.tideHt+' ft';
-    document.getElementById('tPh').textContent=ST.tidePhase;
-    document.getElementById('tNH').textContent=ST.nextHigh;
-    document.getElementById('tFlow').textContent=ST.tideFlow||'--';
-    document.getElementById('tNL').textContent=ST.nextLow;
-    document.getElementById('alT').textContent='TIDE: '+ST.tideHt+'ft '+ST.tidePhase+' · NOAA '+stationId;
-    setSrc('srcTide','TIDE: NOAA '+stationId+' ✓','ok');
-    drawTide(preds,now);
-    setTimeout(function(){ drawTide(preds,new Date()); },300);
+    ST.tidePreds=chartPreds; // Store TODAY-only preds for chart
+    var tHtEl=document.getElementById('tHt'); if(tHtEl)tHtEl.textContent=ST.tideHt+' ft';
+    var tPhEl=document.getElementById('tPh'); if(tPhEl)tPhEl.textContent=ST.tidePhase;
+    var tNHEl=document.getElementById('tNH'); if(tNHEl)tNHEl.textContent=ST.nextHigh;
+    var tFlEl=document.getElementById('tFlow'); if(tFlEl)tFlEl.textContent=ST.tideFlow||'--';
+    var tNLEl=document.getElementById('tNL'); if(tNLEl)tNLEl.textContent=ST.nextLow;
+    var alTEl=document.getElementById('alT'); if(alTEl)alTEl.textContent='TIDE: '+ST.tideHt+'ft '+ST.tidePhase+' · NOAA '+stationId;
+    setSrc('srcTide','TIDE: NOAA '+stationId+' \u2713','ok');
+    drawTide(chartPreds,now);
+    setTimeout(function(){drawTide(chartPreds,new Date());},300);
     return true;
   }catch(e){
     console.warn('NOAA tide:',e.message);
@@ -1267,7 +1271,6 @@ async function fetchWeather(){
       }
       if(daily.length>=3){
         ST.forecast=daily;
-          if(daily[0]&&daily[0].windSpd>0){ST.windSpd=daily[0].windSpd;ST.windDir=daily[0].windDir;}
         setSrc('srcWx','WEATHER: '+nwsCfg.label+' ✓','ok');
         renderForecast();
         return true;
@@ -2515,7 +2518,7 @@ async function go(){
     updateUI();calcScores();
     renderSpots();renderAmenities();updateFlyMatrix();
     renderForecast();
-    drawWindFlowMap();
+    startWindAnimation();
     // Deferred tide redraw ensures canvas has painted before drawing
     setTimeout(function(){ drawTide(ST.tidePreds,new Date()); },250);
     if(!tideOk)tideFallback();
@@ -2532,8 +2535,8 @@ window.addEventListener('DOMContentLoaded',()=>{
   initMap();detectRegion();updateDepth();renderSpots();renderAmenities();
   calcLunar();calcSolunar();calcPalolo();renderForecast();
   setTimeout(go,500);
-  // Start continuous wind animation
-  setTimeout(function(){ startWindAnimation(); }, 800);
+  // Start wind animation AFTER go() fetches real wind data
+  setTimeout(function(){ startWindAnimation(); }, 4000);
   setInterval(go,600000);
   window.addEventListener('resize',()=>{
     drawTide(ST.tidePreds,new Date());drawBaro();drawWindFlowMap();
