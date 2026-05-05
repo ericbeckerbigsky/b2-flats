@@ -734,26 +734,52 @@ const TIDE_TYPES = {
 // ══════════════════════════════════════════════════════════════════
 
 const STATIONS=[
+  // ── VERIFIED NOAA STATION IDs ─────────────────────────────────
+  // All IDs confirmed against tidesandcurrents.noaa.gov
+  // Side = which side of US-1 / Florida Keys highway
+  // Bay = Florida Bay / north of US-1
+  // Ocean = Hawk Channel / Atlantic / south of US-1
+
+  // MIAMI / BISCAYNE
   {id:'8723214',name:'Virginia Key / Miami',            lat:25.7317,lon:-80.1617,side:'ocean'},
   {id:'8723232',name:'Key Biscayne, Biscayne Bay',      lat:25.6930,lon:-80.1560,side:'bay'},
+
+  // UPPER KEYS — BAY SIDE (Florida Bay, north of US-1)
   {id:'8723651',name:'Key Largo, Florida Bay',           lat:25.0867,lon:-80.4467,side:'bay'},
   {id:'8723698',name:'Tavernier Creek, Florida Bay',     lat:25.0150,lon:-80.5233,side:'bay'},
+
+  // UPPER KEYS — OCEAN SIDE (Hawk Channel, south of US-1)
   {id:'8723759',name:'Islamorada, Hawk Channel',          lat:24.9250,lon:-80.6280,side:'ocean'},
+
+  // MIDDLE KEYS — BAY SIDE
   {id:'8723970',name:'Vaca Key, Florida Bay',             lat:24.7117,lon:-81.0967,side:'bay'},
   {id:'8724044',name:'Pigeon Key, Florida Bay',           lat:24.6950,lon:-81.1517,side:'bay'},
+
+  // MIDDLE KEYS — OCEAN SIDE
   {id:'8724032',name:'Pigeon Key, Atlantic/Hawk Ch.',     lat:24.6950,lon:-81.1367,side:'ocean'},
-  {id:'8724374',name:'Bahia Honda, Florida Bay',          lat:24.6583,lon:-81.2767,side:'bay'},
+
+  // LOWER KEYS — BAY SIDE (north of US-1 / Florida Bay side)
+  // 8724112 = Ohio Key-Bahia Honda Key Channel (verified correct ID)
+  {id:'8724112',name:'Bahia Honda, Florida Bay',          lat:24.6620,lon:-81.2780,side:'bay'},
   {id:'8724178',name:'Big Pine Key, Florida Bay',         lat:24.6667,lon:-81.3667,side:'bay'},
   {id:'8724226',name:'Big Pine Key NE, Florida Bay',      lat:24.7183,lon:-81.3633,side:'bay'},
   {id:'8724231',name:'Big Pine Key North End',            lat:24.7233,lon:-81.3817,side:'bay'},
   {id:'8724421',name:'Summerland Key, Niles Channel',     lat:24.6550,lon:-81.4550,side:'bay'},
   {id:'8724313',name:'Cudjoe Key, Cudjoe Bay',            lat:24.6450,lon:-81.5333,side:'bay'},
   {id:'8724489',name:'Big Coppitt Key, Waltz Key Basin',  lat:24.5840,lon:-81.6460,side:'bay'},
-  {id:'8724580',name:'Key West',                          lat:24.5500,lon:-81.8083,side:'ocean'},
+
+  // LOWER KEYS — OCEAN SIDE (south of US-1 / Hawk Channel / Atlantic)
+  // No NOAA harmonic station exists between Pigeon Key and Key West ocean side
+  // Key West covers all lower keys ocean side
+  {id:'8724580',name:'Key West, Atlantic Side',           lat:24.5500,lon:-81.8083,side:'ocean'},
   {id:'8724699',name:'Dry Tortugas, Garden Key',          lat:24.6272,lon:-82.8731,side:'ocean'},
+
+  // FLORIDA WEST COAST
   {id:'8725110',name:'Naples, FL',                        lat:26.1328,lon:-81.8067,side:'gulf'},
   {id:'8725520',name:'Fort Myers, FL',                    lat:26.6478,lon:-81.8717,side:'gulf'},
   {id:'8726520',name:'St. Petersburg, FL',                lat:27.7606,lon:-82.6272,side:'gulf'},
+
+  // INTERNATIONAL — Open-Meteo FES2022 tidal model
   {id:'BELIZE_CITY',name:'Belize City',                   lat:17.498, lon:-88.188, side:'ocean',intl:true},
   {id:'TURNEFFE',   name:'Turneffe Atoll, Belize',        lat:17.352, lon:-87.845, side:'ocean',intl:true},
   {id:'ASCENSION',  name:'Ascension Bay, Mexico',         lat:19.817, lon:-87.483, side:'ocean',intl:true},
@@ -1052,7 +1078,7 @@ function nearestStation(lat,lon){
     var d=Math.hypot(lat-s.lat,lon-s.lon);
     var penalty=0;
     if(isKeysRegion&&pinSide!=='any'&&(s.side==='bay'||s.side==='ocean')){
-      if(s.side!==pinSide) penalty=0.09;
+      if(s.side!==pinSide) penalty=0.15;
     }
     return {s:s, d:d, score:d+penalty};
   }).sort(function(a,b){return a.score-b.score;});
@@ -2420,6 +2446,7 @@ function closeStationModal(){
   var m=document.getElementById('stationModal'); if(m)m.style.display='none';
 }
 
+var _popupSelX=-1, _popupPredsCache=null, _popupSmooth=null;
 async function viewStationTide(stationId,stationName){
   closeStationModal();
   var popup=document.getElementById('stationPopup');
@@ -2445,9 +2472,72 @@ async function viewStationTide(stationId,stationName){
     var preds=d.predictions.map(function(p){return{t:p.t.replace(' ','T'),v:p.v,type:p.type};});
     if(infoEl)infoEl.textContent='NOAA #'+stationId+' · MLLW datum · Tap chart to inspect';
     // Draw popup tide chart
+    _popupPredsCache=preds;_popupSelX=-1;
     setTimeout(function(){
       var cv=document.getElementById('popupTideC');
       if(!cv||!cv.offsetWidth)return;
+      drawPopupChart(preds,new Date(),-1);
+      cv.style.cursor='crosshair';
+      cv.onclick=function(e){
+        if(!_popupSmooth||!_popupPredsCache)return;
+        var rect=cv.getBoundingClientRect();
+        var x=(e.clientX-rect.left)*(cv.offsetWidth/rect.width);
+        _popupSelX=x;
+        // Draw selection line on popup canvas
+        var dpr2=window.devicePixelRatio||1;
+        var ctx2=cv.getContext('2d');
+        // Redraw base chart then add selection
+        var W2=cv.offsetWidth,H2=120;
+        ctx2.setTransform(dpr2,0,0,dpr2,0,0);
+        // Clear and redraw smooth curve
+        ctx2.fillStyle='#000';ctx2.fillRect(0,0,W2,H2);
+        ctx2.beginPath();
+        _popupSmooth.forEach(function(pt,i){i===0?ctx2.moveTo(pt.x,pt.y):ctx2.lineTo(pt.x,pt.y);});
+        ctx2.strokeStyle='#00E5FF';ctx2.lineWidth=2;ctx2.stroke();
+        ctx2.lineTo(W2,H2);ctx2.lineTo(0,H2);ctx2.closePath();
+        var g2=ctx2.createLinearGradient(0,0,0,H2);
+        g2.addColorStop(0,'rgba(0,229,255,.25)');g2.addColorStop(1,'rgba(0,229,255,.02)');
+        ctx2.fillStyle=g2;ctx2.fill();
+        // H/L labels
+        var t0x=new Date(_popupPredsCache[0].t).getTime();
+        var tNx=new Date(_popupPredsCache[_popupPredsCache.length-1].t).getTime();
+        var vsx=_popupPredsCache.map(function(p){return parseFloat(p.v);});
+        var mnx=Math.min.apply(null,vsx),mxx=Math.max.apply(null,vsx),rngx=mxx-mnx||0.1;
+        _popupPredsCache.forEach(function(p){
+          var pv=parseFloat(p.v),lx2=((new Date(p.t).getTime()-t0x)/(tNx-t0x))*W2;
+          var ly2=H2-8-((pv-mnx)/rngx)*(H2-18);
+          ctx2.fillStyle=p.type==='H'?'#00C875':'#00AAFF';
+          ctx2.font='bold 8px Share Tech Mono,monospace';
+          ctx2.fillText(p.type+pv.toFixed(1),Math.min(lx2+3,W2-36),p.type==='H'?ly2-5:ly2+11);
+        });
+        // NOW line
+        var ntx=new Date().getTime();
+        if(ntx>=t0x&&ntx<=tNx){
+          var nfx=(ntx-t0x)/(tNx-t0x),nxx=nfx*W2;
+          var nix=Math.max(0,Math.min(_popupSmooth.length-1,Math.round(nfx*(_popupSmooth.length-1))));
+          var nvx=_popupSmooth[nix].v,nyx=_popupSmooth[nix].y;
+          ctx2.strokeStyle='#FFD700';ctx2.lineWidth=2;ctx2.setLineDash([4,3]);
+          ctx2.beginPath();ctx2.moveTo(nxx,0);ctx2.lineTo(nxx,H2);ctx2.stroke();ctx2.setLineDash([]);
+          ctx2.beginPath();ctx2.arc(nxx,nyx,4,0,Math.PI*2);ctx2.fillStyle='#FFD700';ctx2.fill();
+        }
+        // Selection line (red)
+        var sf2=x/W2;
+        var si2=Math.max(0,Math.min(_popupSmooth.length-1,Math.round(sf2*(_popupSmooth.length-1))));
+        var sv2=_popupSmooth[si2].v,sy2=_popupSmooth[si2].y;
+        var selT=new Date(t0x+(tNx-t0x)*sf2);
+        ctx2.strokeStyle='#E53E3E';ctx2.lineWidth=1.5;ctx2.setLineDash([3,3]);
+        ctx2.beginPath();ctx2.moveTo(x,0);ctx2.lineTo(x,H2);ctx2.stroke();ctx2.setLineDash([]);
+        ctx2.beginPath();ctx2.arc(x,sy2,4,0,Math.PI*2);ctx2.fillStyle='#E53E3E';ctx2.fill();
+        var hh2=selT.getHours(),mm2=String(selT.getMinutes()).padStart(2,'0');
+        var ap2=hh2>=12?'pm':'am';hh2=hh2%12||12;
+        var lbl2=hh2+':'+mm2+ap2+' '+sv2.toFixed(1)+'ft';
+        ctx2.font='bold 9px Share Tech Mono,monospace';
+        var lw2=ctx2.measureText(lbl2).width;
+        var lx3=Math.min(x+5,W2-lw2-4);
+        ctx2.fillStyle='rgba(0,0,0,0.75)';ctx2.fillRect(lx3-2,sy2-20,lw2+4,13);
+        ctx2.fillStyle='#FF6B6B';ctx2.fillText(lbl2,lx3,sy2-10);
+      };
+
       var dpr=window.devicePixelRatio||1,H=120;
       cv.width=cv.offsetWidth*dpr;cv.height=H*dpr;
       var ctx=cv.getContext('2d');ctx.scale(dpr,dpr);var W=cv.offsetWidth;
@@ -2464,6 +2554,7 @@ async function viewStationTide(stationId,stationName){
         }
         smooth.push({x:frac*W,y:H-8-((sv-mn)/rng)*(H-18),v:sv});
       }
+      _popupSmooth=smooth;
       ctx.beginPath();
       smooth.forEach(function(pt,i){i===0?ctx.moveTo(pt.x,pt.y):ctx.lineTo(pt.x,pt.y);});
       ctx.strokeStyle='#00E5FF';ctx.lineWidth=2;ctx.stroke();
