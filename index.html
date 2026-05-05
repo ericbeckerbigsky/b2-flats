@@ -1225,11 +1225,8 @@ async function fetchWeather(){
             var obD = await obR.json();
             var ob = obD.properties;
             if(ob){
-              if(ob.windSpeed&&ob.windSpeed.value!=null){var obsKts=Math.round(ob.windSpeed.value*1.94384);if(obsKts>=0&&obsKts<=80)ST.windSpd=obsKts;}
-              if(ob.windDirection&&ob.windDirection.value!=null)
-                ST.windDir=Math.round(ob.windDirection.value);
-              if(ob.windGust&&ob.windGust.value!=null)
-                ST.windGust=Math.round(ob.windGust.value*1.94384);
+              // Wind from obs removed - unreliable unit handling across stations
+              // Wind comes from NWS forecast period (mph->kts) or Open-Meteo (kts)
               if(ob.barometricPressure&&ob.barometricPressure.value!=null)
                 ST.pressure=+(ob.barometricPressure.value*0.0002953).toFixed(2);
               if(ob.temperature&&ob.temperature.value!=null)
@@ -1270,6 +1267,7 @@ async function fetchWeather(){
       }
       if(daily.length>=3){
         ST.forecast=daily;
+          if(daily[0]&&daily[0].windSpd>0){ST.windSpd=daily[0].windSpd;ST.windDir=daily[0].windDir;}
         setSrc('srcWx','WEATHER: '+nwsCfg.label+' ✓','ok');
         renderForecast();
         return true;
