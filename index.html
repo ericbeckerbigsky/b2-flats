@@ -697,6 +697,10 @@ function toggleTheme(){
 // Auto-switch every minute if no manual override
 setInterval(()=>{
   if(!userThemeOverride) applyTheme(getAutoTheme());
+  // Update time-sensitive scores every minute (not just on full data refresh)
+  calcScores();
+  calcPalolo();
+  updateFlyMatrix();
 },60000);
 
 // ══════════════════════════════════════════════════════════════════
@@ -1538,18 +1542,23 @@ function calcScores(){
   var isSlack  = ST.tideFlow==='SLACK';
   var nearSlack= ST.tideFlow==='SLOW';
   var pmTide   = isSlack?1.0:nearSlack?0.80:0.55;
-  var pmS=Math.round(((pmTide*0.65)+(ST.lunarScore*0.35))*100);
+  // Permit mid-day bonus — crabs most active in warm water mid-day
+  var pmTime = (timeDecimal>=10.0 && timeDecimal<=15.5) ? 1.0 :
+               (timeDecimal>=8.5  && timeDecimal<=17.0) ? 0.80 : 0.60;
+  var pmS=Math.round(((pmTide*0.55)+(ST.lunarScore*0.30)+(pmTime*0.15))*100);
 
-  var pmDesc = isSlack   ? 'TIDAL TURN — cast NOW, dead-drop crab' :
-               nearSlack ? 'SLOWING — get ready, crab on bottom' :
-                           ST.tidePhase+' tide · moon '+Math.round(mp)+'d';
+  var pmTimeNote = (timeDecimal>=10.0&&timeDecimal<=15.5)?'Mid-day prime for permit':
+                   (timeDecimal>=8.5&&timeDecimal<=17.0)?'Good daytime window':'Dawn/dusk less ideal';
+  var pmDesc = isSlack   ? 'TIDAL TURN — cast NOW, dead-drop crab · '+pmTimeNote :
+               nearSlack ? 'SLOWING — get ready, crab on bottom · '+pmTimeNote :
+                           ST.tidePhase+' tide · '+pmTimeNote+' · moon '+Math.round(mp)+'d';
   var pmTideTag = isSlack?['TIDAL TURN','tg']:nearSlack?['SLOWING','ty']:['MOVING TIDE','tr'];
   var pmMoonTag = ST.lunarScore>0.7?['STRONG MOON','tg']:['WEAK MOON','tr'];
 
   // ── BONEFISH SCORE ──
   // Incoming tide + right water temp. Time of day matters less than tide.
   var rising = ST.tidePhase==='RISING'?1.0:
-               ST.tidePhase==='HIGH SLACK'?0.35:0.15;
+               ST.tidePhase==='HIGH SLACK'?0.45:0.15;
   // Bonefish temp: 72-82°F prime, below 68°F or above 88°F poor
   var bft = ST.waterTemp>=72&&ST.waterTemp<=82 ? 1.0  :
             ST.waterTemp>=68&&ST.waterTemp<72   ? 0.55 :
@@ -1571,7 +1580,9 @@ function calcScores(){
   }
 
   upd('tp', tpS, tpDesc+' · Tide '+ST.tideFlow, [tpTimeTag, [tideMoving>0.5?'MOVING WATER':'SLACK WATER', tideMoving>0.5?'tb':'tr']]);
-  upd('pm', pmS, pmDesc, [pmTideTag, pmMoonTag]);
+  var pmTimeTag = (timeDecimal>=10.0&&timeDecimal<=15.5)?['MID-DAY PRIME','tg']:
+                  (timeDecimal>=8.5&&timeDecimal<=17.0)?['GOOD WINDOW','tb']:['OFF HOURS','ty'];
+  upd('pm', pmS, pmDesc, [pmTideTag, pmMoonTag, pmTimeTag]);
   upd('bf', bfS, bfDesc,  [bfTideTag, bfTempTag]);
 }
 
