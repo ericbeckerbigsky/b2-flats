@@ -204,7 +204,7 @@ body.dark .sc.bf{background:#000d1a}
 .fly-why{font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--dim);flex:2;line-height:1.3}
 
 /* ── RADAR ── */
-.radar-wrap{height:110px;background:#000;border-radius:4px;border:1px solid var(--bdr);position:relative;overflow:hidden}
+.radar-wrap{height:220px;background:#000;border-radius:4px;border:1px solid var(--bdr);position:relative;overflow:hidden}
 .radar-sweep{position:absolute;width:50%;height:1px;top:50%;left:50%;background:linear-gradient(90deg,transparent,rgba(0,255,0,.9));transform-origin:left center;animation:sweep 3s linear infinite}
 @keyframes sweep{from{transform:rotate(0)}to{transform:rotate(360deg)}}
 
@@ -446,7 +446,7 @@ body.dark .sc.bf{background:#000d1a}
         <span class="stn-dist" id="stnDist"></span>
       </div>
     </div>
-    <canvas id="tideC" style="width:100%;height:80px;margin-top:6px;border-radius:4px;background:#000;display:block;cursor:crosshair" onclick="tideCanvasTap(event)"></canvas>
+    <canvas id="tideC" style="width:100%;height:160px;margin-top:6px;border-radius:4px;background:#000;display:block;cursor:crosshair" onclick="tideCanvasTap(event)"></canvas>
     <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
       <div style="font-size:8px;color:var(--dim);font-family:'Share Tech Mono',monospace">&#9658; TAP CHART TO INSPECT TIDE</div>
       <button onclick="openStationModal()" style="background:transparent;border:1px solid var(--gold);color:var(--gold);font-family:'Share Tech Mono',monospace;font-size:9px;font-weight:700;padding:5px 10px;border-radius:4px;cursor:pointer;touch-action:manipulation;min-height:36px">&#9660; STATIONS</button>
@@ -491,17 +491,17 @@ body.dark .sc.bf{background:#000d1a}
 <div class="panel">
     <div class="pt">◈ NEXRAD RADAR — <span id="radLbl" style="color:var(--cyan)">--</span></div>
     <div class="radar-wrap">
-      <svg width="100%" height="100%" viewBox="0 0 240 110" style="position:absolute;top:0;left:0">
-        <circle cx="120" cy="55" r="18" fill="none" stroke="rgba(0,255,0,.12)" stroke-width="1" stroke-dasharray="3,3"/>
-        <circle cx="120" cy="55" r="36" fill="none" stroke="rgba(0,255,0,.09)" stroke-width="1" stroke-dasharray="3,3"/>
-        <circle cx="120" cy="55" r="52" fill="none" stroke="#E53E3E" stroke-width="1.5" stroke-dasharray="4,3"/>
-        <line x1="120" y1="3" x2="120" y2="107" stroke="rgba(0,255,0,.07)" stroke-width="0.5"/>
-        <line x1="3" y1="55" x2="237" y2="55" stroke="rgba(0,255,0,.07)" stroke-width="0.5"/>
-        <text x="126" y="42" fill="rgba(0,255,0,.5)" font-size="6" font-family="Share Tech Mono,monospace">5mi</text>
-        <text x="126" y="22" fill="rgba(0,255,0,.5)" font-size="6" font-family="Share Tech Mono,monospace">10mi</text>
-        <text x="126" y="8" fill="#E53E3E" font-size="7" font-family="Share Tech Mono,monospace" font-weight="bold">◉ 15mi RANGE</text>
-        <circle cx="120" cy="55" r="4" fill="#00E5FF"/>
-        <circle cx="120" cy="55" r="8" fill="none" stroke="#00E5FF" stroke-width="1" opacity="0.5"/>
+      <svg width="100%" height="100%" viewBox="0 0 240 220" style="position:absolute;top:0;left:0">
+        <circle cx="120" cy="110" r="36" fill="none" stroke="rgba(0,255,0,.12)" stroke-width="1" stroke-dasharray="3,3"/>
+        <circle cx="120" cy="110" r="72" fill="none" stroke="rgba(0,255,0,.09)" stroke-width="1" stroke-dasharray="3,3"/>
+        <circle cx="120" cy="110" r="105" fill="none" stroke="#E53E3E" stroke-width="1.5" stroke-dasharray="4,3"/>
+        <line x1="120" y1="3" x2="120" y2="217" stroke="rgba(0,255,0,.07)" stroke-width="0.5"/>
+        <line x1="3" y1="110" x2="237" y2="110" stroke="rgba(0,255,0,.07)" stroke-width="0.5"/>
+        <text x="126" y="78" fill="rgba(0,255,0,.5)" font-size="7" font-family="Share Tech Mono,monospace">5mi</text>
+        <text x="126" y="44" fill="rgba(0,255,0,.45)" font-size="7" font-family="Share Tech Mono,monospace">10mi</text>
+        <text x="126" y="12" fill="#E53E3E" font-size="7" font-family="Share Tech Mono,monospace" font-weight="bold">◉ 15mi RANGE</text>
+        <circle cx="120" cy="110" r="5" fill="#00E5FF"/>
+        <circle cx="120" cy="110" r="10" fill="none" stroke="#00E5FF" stroke-width="1.5" opacity="0.5"/>
       </svg>
       <div class="radar-sweep"></div>
       <div style="position:absolute;bottom:4px;right:6px;font-family:'Share Tech Mono',monospace;font-size:9px;color:rgba(0,255,0,.5);font-weight:700">LIVE</div>
@@ -537,6 +537,7 @@ body.dark .sc.bf{background:#000d1a}
         <div style="font-family:'Orbitron',monospace;font-size:10px;color:var(--gold);font-weight:700;margin-bottom:2px" id="moonNm">LOADING...</div>
         <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--dim)" id="moonIl">--% illuminated</div>
         <div style="font-size:9px;margin-top:3px;font-family:'Share Tech Mono',monospace;font-weight:700" id="moonBon"></div>
+        <div style="font-size:9px;margin-top:4px;font-family:'Share Tech Mono',monospace;color:var(--dim)" id="moonNext"></div>
       </div>
     </div>
   </div>
@@ -728,56 +729,54 @@ const TIDE_TYPES = {
 // ══════════════════════════════════════════════════════════════════
 
 const STATIONS=[
-  // ── VERIFIED NOAA STATION IDs ─────────────────────────────────
-  // All IDs confirmed against tidesandcurrents.noaa.gov
-  // Side = which side of US-1 / Florida Keys highway
-  // Bay = Florida Bay / north of US-1
-  // Ocean = Hawk Channel / Atlantic / south of US-1
+  // All IDs verified against NOAA tidesandcurrents.noaa.gov
+  // Bay = Florida Bay / north of US-1 highway
+  // Ocean = Hawk Channel / Atlantic / south of US-1 highway
 
   // MIAMI / BISCAYNE
-  {id:'8723214',name:'Virginia Key / Miami',            lat:25.7317,lon:-80.1617,side:'ocean'},
-  {id:'8723232',name:'Key Biscayne, Biscayne Bay',      lat:25.6930,lon:-80.1560,side:'bay'},
+  {id:'8723214',name:'Virginia Key / Miami',              lat:25.7317,lon:-80.1617,side:'ocean'},
+  {id:'8723232',name:'Key Biscayne, Biscayne Bay',        lat:25.6930,lon:-80.1560,side:'bay'},
 
   // UPPER KEYS — BAY SIDE (Florida Bay, north of US-1)
-  {id:'8723651',name:'Key Largo, Florida Bay',           lat:25.0867,lon:-80.4467,side:'bay'},
-  {id:'8723698',name:'Tavernier Creek, Florida Bay',     lat:25.0150,lon:-80.5233,side:'bay'},
+  {id:'8723651',name:'Key Largo, Florida Bay',             lat:25.0867,lon:-80.4467,side:'bay'},
+  {id:'8723698',name:'Tavernier Creek, Florida Bay',       lat:25.0150,lon:-80.5233,side:'bay'},
 
   // UPPER KEYS — OCEAN SIDE (Hawk Channel, south of US-1)
-  {id:'8723759',name:'Islamorada, Hawk Channel',          lat:24.9250,lon:-80.6280,side:'ocean'},
+  {id:'8723759',name:'Islamorada, Hawk Channel',            lat:24.9250,lon:-80.6280,side:'ocean'},
 
   // MIDDLE KEYS — BAY SIDE
-  {id:'8723970',name:'Vaca Key, Florida Bay',             lat:24.7117,lon:-81.0967,side:'bay'},
-  {id:'8724044',name:'Pigeon Key, Florida Bay',           lat:24.6950,lon:-81.1517,side:'bay'},
+  {id:'8723970',name:'Vaca Key, Florida Bay',               lat:24.7117,lon:-81.0967,side:'bay'},
+  {id:'8724044',name:'Pigeon Key, Florida Bay (N side)',    lat:24.6950,lon:-81.1517,side:'bay'},
 
-  // MIDDLE KEYS — OCEAN SIDE
-  {id:'8724032',name:'Pigeon Key, Atlantic/Hawk Ch.',     lat:24.6950,lon:-81.1367,side:'ocean'},
+  // MIDDLE KEYS — OCEAN SIDE (Hawk Channel)
+  {id:'8724032',name:'Pigeon Key, Hawk Channel (S side)',   lat:24.6950,lon:-81.1367,side:'ocean'},
 
-  // LOWER KEYS — BAY SIDE (north of US-1 / Florida Bay side)
-  // 8724112 = Ohio Key-Bahia Honda Key Channel (verified correct ID)
-  {id:'8724112',name:'Bahia Honda, Florida Bay',          lat:24.6620,lon:-81.2780,side:'bay'},
-  {id:'8724178',name:'Big Pine Key, Florida Bay',         lat:24.6667,lon:-81.3667,side:'bay'},
-  {id:'8724226',name:'Big Pine Key NE, Florida Bay',      lat:24.7183,lon:-81.3633,side:'bay'},
-  {id:'8724231',name:'Big Pine Key North End',            lat:24.7233,lon:-81.3817,side:'bay'},
-  {id:'8724421',name:'Summerland Key, Niles Channel',     lat:24.6550,lon:-81.4550,side:'bay'},
-  {id:'8724313',name:'Cudjoe Key, Cudjoe Bay',            lat:24.6450,lon:-81.5333,side:'bay'},
-  {id:'8724489',name:'Big Coppitt Key, Waltz Key Basin',  lat:24.5840,lon:-81.6460,side:'bay'},
+  // LOWER KEYS — BAY SIDE (Florida Bay / north of US-1)
+  {id:'8724112',name:'Ohio Key-Bahia Honda Channel',        lat:24.6620,lon:-81.2780,side:'bay'},
+  {id:'8724178',name:'Big Pine Key, Spanish Harbor',        lat:24.6667,lon:-81.3667,side:'bay'},
+  {id:'8724192',name:'Big Pine Key, Coupon Bight',          lat:24.6600,lon:-81.3600,side:'bay'},
+  {id:'8724226',name:'Big Pine Key, Northeast Shore',       lat:24.7283,lon:-81.3867,side:'bay'},
+  {id:'8724231',name:'Big Pine Key, North End',             lat:24.7233,lon:-81.3817,side:'bay'},
+  {id:'8724421',name:'Summerland Key, Niles Channel',       lat:24.6550,lon:-81.4550,side:'bay'},
+  {id:'8724313',name:'Cudjoe Key, Cudjoe Bay',              lat:24.6450,lon:-81.5333,side:'bay'},
+  {id:'8724489',name:'Big Coppitt Key, Waltz Key Basin',    lat:24.5840,lon:-81.6460,side:'bay'},
 
-  // LOWER KEYS — OCEAN SIDE (south of US-1 / Hawk Channel / Atlantic)
-  // No NOAA harmonic station exists between Pigeon Key and Key West ocean side
-  // Key West covers all lower keys ocean side
-  {id:'8724580',name:'Key West, Atlantic Side',           lat:24.5500,lon:-81.8083,side:'ocean'},
-  {id:'8724699',name:'Dry Tortugas, Garden Key',          lat:24.6272,lon:-82.8731,side:'ocean'},
+  // LOWER KEYS — OCEAN SIDE
+  // NOTE: No NOAA station exists in Hawk Channel between Pigeon Key and Key West
+  // Key West is the reference station for all lower keys ocean/Hawk Channel
+  {id:'8724580',name:'Key West',                            lat:24.5500,lon:-81.8083,side:'ocean'},
+  {id:'8724699',name:'Dry Tortugas, Garden Key',            lat:24.6272,lon:-82.8731,side:'ocean'},
 
-  // FLORIDA WEST COAST
-  {id:'8725110',name:'Naples, FL',                        lat:26.1328,lon:-81.8067,side:'gulf'},
-  {id:'8725520',name:'Fort Myers, FL',                    lat:26.6478,lon:-81.8717,side:'gulf'},
-  {id:'8726520',name:'St. Petersburg, FL',                lat:27.7606,lon:-82.6272,side:'gulf'},
+  // FLORIDA WEST COAST / GULF
+  {id:'8725110',name:'Naples, FL',                          lat:26.1328,lon:-81.8067,side:'gulf'},
+  {id:'8725520',name:'Fort Myers, FL',                      lat:26.6478,lon:-81.8717,side:'gulf'},
+  {id:'8726520',name:'St. Petersburg, FL',                  lat:27.7606,lon:-82.6272,side:'gulf'},
 
   // INTERNATIONAL — Open-Meteo FES2022 tidal model
-  {id:'BELIZE_CITY',name:'Belize City',                   lat:17.498, lon:-88.188, side:'ocean',intl:true},
-  {id:'TURNEFFE',   name:'Turneffe Atoll, Belize',        lat:17.352, lon:-87.845, side:'ocean',intl:true},
-  {id:'ASCENSION',  name:'Ascension Bay, Mexico',         lat:19.817, lon:-87.483, side:'ocean',intl:true},
-  {id:'ESPSANTO',   name:'Espiritu Santo Bay, Mexico',    lat:19.500, lon:-87.600, side:'ocean',intl:true},
+  {id:'BELIZE_CITY',name:'Belize City',                     lat:17.498, lon:-88.188, side:'ocean',intl:true},
+  {id:'TURNEFFE',   name:'Turneffe Atoll, Belize',          lat:17.352, lon:-87.845, side:'ocean',intl:true},
+  {id:'ASCENSION',  name:'Ascension Bay, Mexico',           lat:19.817, lon:-87.483, side:'ocean',intl:true},
+  {id:'ESPSANTO',   name:'Espiritu Santo Bay, Mexico',      lat:19.500, lon:-87.600, side:'ocean',intl:true},
 ];
 
 // NDBC water temp buoys
@@ -1086,7 +1085,7 @@ function nearestStation(lat,lon){
     var d=Math.hypot(lat-s.lat,lon-s.lon);
     var penalty=0;
     if(isKeysRegion&&pinSide!=='any'&&(s.side==='bay'||s.side==='ocean')){
-      if(s.side!==pinSide) penalty=0.15;
+      if(s.side!==pinSide) penalty=0.25;
     }
     return {s:s, d:d, score:d+penalty};
   }).sort(function(a,b){return a.score-b.score;});
@@ -1307,12 +1306,18 @@ async function fetchWeather(){
         ST.forecast=daily;
           // Fetch Open-Meteo current wind (NWS forecast = daily max, not current)
           try{
-            var cwR=await fetch('https://api.open-meteo.com/v1/forecast?latitude='+ST.lat.toFixed(4)+'&longitude='+ST.lon.toFixed(4)+'&current=wind_speed_10m,wind_direction_10m,wind_gusts_10m&wind_speed_unit=kn&timezone=auto&forecast_days=1');
+            var cwR=await fetch('https://api.open-meteo.com/v1/forecast?latitude='+ST.lat.toFixed(4)+'&longitude='+ST.lon.toFixed(4)+'&current=wind_speed_10m,wind_direction_10m,wind_gusts_10m,surface_pressure&hourly=surface_pressure&wind_speed_unit=kn&timezone=auto&forecast_days=1');
             var cwD=await cwR.json();
             if(cwD.current){
               if(cwD.current.wind_speed_10m!=null)ST.windSpd=Math.round(cwD.current.wind_speed_10m);
               if(cwD.current.wind_direction_10m!=null)ST.windDir=Math.round(cwD.current.wind_direction_10m);
               if(cwD.current.wind_gusts_10m!=null)ST.windGust=Math.round(cwD.current.wind_gusts_10m);
+              if(cwD.current.surface_pressure!=null)ST.pressure=+(cwD.current.surface_pressure*0.02953).toFixed(2);
+            }
+            if(cwD.hourly&&cwD.hourly.surface_pressure){
+              var cwNow=new Date().getHours();
+              var cwHp=cwD.hourly.surface_pressure;
+              ST.baroHist=cwHp.slice(Math.max(0,cwNow-11),cwNow+1).filter(function(v){return v!=null;}).map(function(v){return+(v*0.02953).toFixed(2);});
             }
           }catch(e){}
         setSrc('srcWx','WEATHER: '+nwsCfg.label+' ✓','ok');
@@ -1331,6 +1336,7 @@ async function fetchWeather(){
     var url='https://api.open-meteo.com/v1/forecast?latitude='+ST.lat.toFixed(4)+
       '&longitude='+ST.lon.toFixed(4)+
       '&current=temperature_2m,wind_speed_10m,wind_direction_10m,wind_gusts_10m,surface_pressure,weather_code'+
+      '&hourly=surface_pressure'+
       '&daily=weather_code,temperature_2m_max,temperature_2m_min,wind_speed_10m_max,'+
       'wind_direction_10m_dominant,precipitation_sum,precipitation_probability_max,wind_gusts_10m_max'+
       '&temperature_unit=fahrenheit&wind_speed_unit=kn&timezone=auto&forecast_days=7';
@@ -1344,8 +1350,13 @@ async function fetchWeather(){
       if(cur.wind_direction_10m!=null) ST.windDir=Math.round(cur.wind_direction_10m);
       if(cur.wind_gusts_10m!=null) ST.windGust=Math.round(cur.wind_gusts_10m);
       if(!ST.airTemp&&cur.temperature_2m!=null) ST.airTemp=Math.round(cur.temperature_2m)||82;
-      if(cur.surface_pressure&&!ST.pressure)
-        ST.pressure=+(cur.surface_pressure*0.02953).toFixed(2);
+      if(cur.surface_pressure)ST.pressure=+(cur.surface_pressure*0.02953).toFixed(2);
+    }
+    // Build 12-hour baro history from hourly data
+    if(d.hourly&&d.hourly.surface_pressure){
+      var omNow=new Date().getHours();
+      var omHp=d.hourly.surface_pressure;
+      ST.baroHist=omHp.slice(Math.max(0,omNow-11),omNow+1).filter(function(v){return v!=null;}).map(function(v){return+(v*0.02953).toFixed(2);});
     }
     if(d.daily){
       ST.forecast=d.daily.time.map(function(t,i){
@@ -1433,6 +1444,21 @@ function calcLunar(){
   document.getElementById('moonIl').textContent=illum+'% illuminated';
   document.getElementById('moonEm').textContent=emoji;
   document.getElementById('moonBon').innerHTML=bonus;
+  // Days to next full or new moon
+  var daysToFull=((14.77-phase)+29.53)%29.53;
+  var daysToNew=(29.53-phase)%29.53;
+  var nextMoonEl=document.getElementById('moonNext');
+  if(nextMoonEl){
+    if(daysToFull<daysToNew){
+      var df=Math.round(daysToFull*10)/10;
+      nextMoonEl.textContent=df<1?'FULL MOON TONIGHT':'Full moon in '+Math.ceil(daysToFull)+(Math.ceil(daysToFull)===1?' day':' days');
+      nextMoonEl.style.color=daysToFull<2?'var(--grn)':'var(--dim)';
+    }else{
+      var dn=Math.round(daysToNew*10)/10;
+      nextMoonEl.textContent=dn<1?'NEW MOON TONIGHT':'New moon in '+Math.ceil(daysToNew)+(Math.ceil(daysToNew)===1?' day':' days');
+      nextMoonEl.style.color=daysToNew<2?'var(--grn)':'var(--dim)';
+    }
+  }
   document.getElementById('alM').textContent='MOON: '+nm;
   setSrc('srcLunar','LUNAR: CALCULATED ✓','ok');
 }
@@ -1696,7 +1722,7 @@ function drawTide(preds,now,selectedX){
   var cv=document.getElementById('tideC');
   if(!cv||!cv.offsetWidth)return;
   var dpr=window.devicePixelRatio||1;
-  var H=80;
+  var H=160;
   cv.width=cv.offsetWidth*dpr;cv.height=H*dpr;
   var ctx=cv.getContext('2d');ctx.scale(dpr,dpr);
   var W=cv.offsetWidth;
@@ -1706,6 +1732,9 @@ function drawTide(preds,now,selectedX){
   if(preds&&preds.length>1){
     var t0=new Date(preds[0].t).getTime();
     var tN=new Date(preds[preds.length-1].t).getTime();
+    // Extend tN to end of day so NOW marker always shows even after last prediction
+    var endOfDay=new Date(now.getFullYear(),now.getMonth(),now.getDate(),23,59,59).getTime();
+    if(tN<endOfDay) tN=endOfDay;
     var vs=preds.map(function(p){return parseFloat(p.v);});
     var mn=Math.min.apply(null,vs),mx=Math.max.apply(null,vs),rng=mx-mn||0.1;
     var N=300;
