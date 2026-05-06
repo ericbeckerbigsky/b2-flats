@@ -787,14 +787,17 @@ const STATIONS=[
 
 // NDBC water temp buoys
 const BUOYS=[
-  {id:'PKYF1',name:'Peterson Key, FL',  lat:24.918,lon:-80.747},
-  {id:'BKYF1',name:'Barnes Key, FL',    lat:25.119,lon:-80.834},
-  {id:'BNKF1',name:'Buttonwood Sound',  lat:25.087,lon:-80.519},
-  {id:'41047',name:'Fowey Rocks, FL',   lat:25.59, lon:-80.10},
-  {id:'41043',name:'NE Gulf — Keys',    lat:24.404,lon:-81.965},
-  {id:'CLBF1',name:'Charlotte Harbor',  lat:26.916,lon:-82.065},
-  {id:'42036',name:'W Gulf of Mexico',  lat:28.5,  lon:-84.517},
-  {id:'42056',name:'Yucatan Channel',   lat:21.964,lon:-85.059},
+  // FL Keys CO-OPS stations with live sensors (NDBC IDs)
+  {id:'VCAF1',name:'Vaca Key (8723970)',    lat:24.711,lon:-81.107}, // CO-OPS + NDBC live
+  {id:'KYWF1',name:'Key West (8724580)',    lat:24.556,lon:-81.808}, // CO-OPS + NDBC live
+  {id:'PKYF1',name:'Peterson Key, FL',     lat:24.918,lon:-80.747},
+  {id:'BKYF1',name:'Barnes Key, FL',       lat:25.119,lon:-80.834},
+  {id:'BNKF1',name:'Buttonwood Sound',     lat:25.087,lon:-80.519},
+  {id:'41047',name:'Fowey Rocks, FL',      lat:25.59, lon:-80.10},
+  {id:'41043',name:'NE Gulf — Keys',       lat:24.404,lon:-81.965},
+  {id:'CLBF1',name:'Charlotte Harbor',     lat:26.916,lon:-82.065},
+  {id:'42036',name:'W Gulf of Mexico',     lat:28.5,  lon:-84.517},
+  {id:'42056',name:'Yucatan Channel',      lat:21.964,lon:-85.059},
 ];
 
 // ══════════════════════════════════════════════════════════════════
@@ -1391,15 +1394,28 @@ async function fetchWeather(){
 // WATER TEMP — NOAA CO-OPS first, then NDBC buoy
 // ══════════════════════════════════════════════════════════════════
 async function fetchWaterTemp(stationId){
-  // Try NOAA CO-OPS water_temperature for the tide station
-  try{
-    const r=await fetch(`https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?date=latest&station=${stationId}&product=water_temperature&units=english&time_zone=gmt&application=B2FlatsStalker&format=json`);
-    const d=await r.json();
-    if(d.data&&d.data.length){
-      const t=parseFloat(d.data[0].v);
-      if(t>40&&t<110){ST.waterTemp=Math.round(t);setSrc('srcTemp',`WATER TEMP: NOAA ${stationId} ✓`,'ok');document.getElementById('tempSource').textContent=`NOAA Station ${stationId} — live sensor ✓`;return true;}
-    }
-  }catch(e){}
+  // Try CO-OPS water_temperature on the passed tide station first
+  // Then try the two Keys stations with confirmed live sensors
+  var coopsStations=[stationId,'8723970','8724580'];
+  // Remove duplicates
+  coopsStations=coopsStations.filter(function(v,i,a){return a.indexOf(v)===i;});
+  for(var ci=0;ci<coopsStations.length;ci++){
+    var csid=coopsStations[ci];
+    try{
+      var cr=await fetch('https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?date=latest&station='+csid+'&product=water_temperature&units=english&time_zone=gmt&application=B2FlatsStalker&format=json');
+      var cd=await cr.json();
+      if(cd.data&&cd.data.length){
+        var ct=parseFloat(cd.data[0].v);
+        if(ct>50&&ct<105){
+          ST.waterTemp=Math.round(ct);
+          var cname=csid==='8723970'?'Vaca Key':csid==='8724580'?'Key West':'NOAA '+csid;
+          setSrc('srcTemp','WATER TEMP: '+cname+' ✓','ok');
+          document.getElementById('tempSource').textContent=cname+' CO-OPS live sensor ✓';
+          return true;
+        }
+      }
+    }catch(e){}
+  }
   // Try nearest NDBC buoy
   let best=BUOYS[0],bestD=9999;
   BUOYS.forEach(b=>{const d=Math.hypot(ST.lat-b.lat,ST.lon-b.lon);if(d<bestD){bestD=d;best=b;}});
