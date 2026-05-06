@@ -2766,13 +2766,57 @@ function closeStationPopup(){
   var p=document.getElementById('stationPopup'); if(p)p.style.display='none';
 }
 
+// ══ DEDICATED BAROMETRIC PRESSURE FETCH ══════════════════════════
+async function fetchBaroPressure(){
+  try{
+    var url='https://api.open-meteo.com/v1/forecast?latitude='+ST.lat.toFixed(4)+
+      '&longitude='+ST.lon.toFixed(4)+
+      '&current=surface_pressure'+
+      '&hourly=surface_pressure'+
+      '&timezone=auto&forecast_days=1';
+    var r=await fetch(url);
+    var d=await r.json();
+    if(d.current&&d.current.surface_pressure!=null){
+      ST.pressure=+(d.current.surface_pressure*0.02953).toFixed(2);
+    }
+    if(d.hourly&&d.hourly.surface_pressure&&d.hourly.surface_pressure.length){
+      var nowH=new Date().getHours();
+      var hp=d.hourly.surface_pressure;
+      // Get last 12 hours of today's values up to now
+      var hist=hp.slice(Math.max(0,nowH-11),nowH+1)
+               .filter(function(v){return v!=null&&v>900;})
+               .map(function(v){return+(v*0.02953).toFixed(2);});
+      if(hist.length>0){
+        ST.baroHist=hist;
+        // Derive trend from first to last reading
+        var delta=hist[hist.length-1]-hist[0];
+        ST.pressureTrend=delta>0.02?'rising':delta<-0.02?'falling':'steady';
+        // Update pressure display
+        var presEl=document.getElementById('presV');
+        if(presEl)presEl.textContent=ST.pressure+' inHg';
+        var presAd=document.getElementById('presAd');
+        if(presAd){
+          var advice=ST.pressureTrend==='rising'?'Rising pressure \u2014 fish may be selective. Work flat edges early.':
+                     ST.pressureTrend==='falling'?'Falling baro \u2014 PRE-STORM FEEDING WINDOW OPEN. Fish aggressively NOW.':
+                     'Stable pressure \u2014 predictable behavior. Fish tidal windows and solunar majors.';
+          presAd.textContent=advice;
+          presAd.style.color=ST.pressureTrend==='rising'?'var(--grn)':ST.pressureTrend==='falling'?'var(--red)':'var(--gold)';
+        }
+        drawBaro();
+        return true;
+      }
+    }
+  }catch(e){console.warn('fetchBaroPressure:',e);}
+  return false;
+}
+
 async function go(){
   if(ST.busy)return;ST.busy=true;
   try{
     const stn=nearestStation(ST.lat,ST.lon);
     // Fetch all in parallel
     const[wxOk,tideOk]=await Promise.all([fetchWeather(),fetchNOAATides(stn.id)]);
-    await fetchWaterTemp(stn.id);
+    await Promise.all([fetchWaterTemp(stn.id),fetchBaroPressure()]);
     calcLunar();calcSolunar();calcPalolo();
     updateUI();calcScores();
     renderSpots();renderAmenities();updateFlyMatrix();
