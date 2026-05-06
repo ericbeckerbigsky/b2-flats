@@ -697,7 +697,9 @@ function toggleTheme(){
 // Auto-switch every minute if no manual override
 setInterval(()=>{
   if(!userThemeOverride) applyTheme(getAutoTheme());
-  // Update time-sensitive scores every minute (not just on full data refresh)
+  // Re-derive tide state from already-loaded predictions (no fetch needed)
+  recalcTideState();
+  // Update time-sensitive scores every minute
   calcScores();
   calcPalolo();
   updateFlyMatrix();
@@ -1482,6 +1484,50 @@ function calcSolunar(){
   document.getElementById('alS').textContent='NEXT MAJOR: '+fmtH(nM%24);
 }
 
+// ══ RECALC TIDE STATE FROM LOADED PREDS (no fetch) ══════════════
+function recalcTideState(){
+  var preds=ST.tidePreds;
+  if(!preds||preds.length<2)return;
+  var now=new Date();
+  var nt=now.getTime();
+  var vs=preds.map(function(p){return parseFloat(p.v);});
+  // Interpolate current height
+  var curHt=vs[0];
+  for(var i=0;i<preds.length-1;i++){
+    var t0=new Date(preds[i].t).getTime();
+    var t1=new Date(preds[i+1].t).getTime();
+    if(nt>=t0&&nt<=t1){
+      var mu=(nt-t0)/(t1-t0);
+      curHt=vs[i]*(1-mu)+vs[i+1]*mu;
+      // Tide state from sinusoidal position within this cycle
+      var fp=Math.sin(mu*Math.PI);
+      ST.tidePhase=vs[i+1]>vs[i]?'RISING':'FALLING';
+      ST.tideFlow=fp<0.15?'SLACK':fp<0.38?'SLOW':fp<0.70?'MODERATE':'STRONG';
+      break;
+    }
+  }
+  ST.tideHt=curHt.toFixed(1);
+  // Find next H/L from allPreds (use tidePreds as proxy, they're today-only)
+  var nH=null,nL=null;
+  preds.forEach(function(p){
+    if(new Date(p.t)>now){
+      if(p.type==='H'&&!nH)nH=p;
+      if(p.type==='L'&&!nL)nL=p;
+    }
+  });
+  if(nH)ST.nextHigh=fmtTime(nH.t);
+  if(nL)ST.nextLow=fmtTime(nL.t);
+  // Update the brief strip display in real time
+  var bTEl=document.getElementById('bTide');
+  if(bTEl)bTEl.textContent=ST.tideHt+' ft';
+  var bTPEl=document.getElementById('bTidePhase');
+  if(bTPEl){bTPEl.textContent=ST.tidePhase;bTPEl.style.color=ST.tidePhase==='RISING'?'var(--grn)':'var(--red)';}
+  var bTFEl=document.getElementById('bTideFlow');
+  if(bTFEl)bTFEl.textContent=ST.tideFlow;
+  var alTEl=document.getElementById('alT');
+  if(alTEl)alTEl.textContent='TIDE: '+ST.tideHt+'ft '+ST.tidePhase+' · '+ST.tideFlow;
+}
+
 // ══════════════════════════════════════════════════════════════════
 // SCORES
 // ══════════════════════════════════════════════════════════════════
@@ -1751,11 +1797,26 @@ function drawTide(preds,now,selectedX){
     var N=300;
 
     // Cosine-interpolated smooth curve
+    // tN is extended to end of day — but NOAA preds end earlier
+    // For the region AFTER the last pred, continue the cosine curve
+    // by extrapolating one more virtual H/L point beyond the last pred
+    var lastPred = preds[preds.length-1];
+    var lastV = vs[vs.length-1];
+    // Add a virtual continuation point one full semi-cycle after the last pred
+    // This lets the curve fall/rise naturally past the last real data point
+    var lastT = new Date(lastPred.t).getTime();
+    var secondLastT = preds.length>1 ? new Date(preds[preds.length-2].t).getTime() : lastT - 6*3600000;
+    var halfCycleMs = Math.abs(lastT - secondLastT); // ms between last two H/L events
+    var virtT = lastT + halfCycleMs; // next virtual H/L
+    var virtV = vs.length>1 ? vs[vs.length-2] : lastV; // alternate between prev values
+
     var smooth=[];
     for(var si=0;si<=N;si++){
       var frac=si/N;
       var tAt=t0+frac*(tN-t0);
-      var sv=vs[0];
+      var sv=lastV; // default: hold last known value
+      // Check real pred pairs first
+      var found=false;
       for(var j=0;j<preds.length-1;j++){
         var tj=new Date(preds[j].t).getTime();
         var tj1=new Date(preds[j+1].t).getTime();
@@ -1763,8 +1824,14 @@ function drawTide(preds,now,selectedX){
           var mu=(tAt-tj)/(tj1-tj);
           var mu2=(1-Math.cos(mu*Math.PI))/2;
           sv=vs[j]*(1-mu2)+vs[j+1]*mu2;
-          break;
+          found=true;break;
         }
+      }
+      // After last real pred: cosine-extrapolate to virtual next turning point
+      if(!found&&tAt>=lastT&&tAt<=virtT){
+        var mu=(tAt-lastT)/(virtT-lastT);
+        var mu2=(1-Math.cos(mu*Math.PI))/2;
+        sv=lastV*(1-mu2)+virtV*mu2;
       }
       smooth.push({x:frac*W,y:H-6-((sv-mn)/rng)*(H-14),v:sv});
     }
