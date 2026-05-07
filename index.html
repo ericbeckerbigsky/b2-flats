@@ -1993,14 +1993,9 @@ function tideCanvasTap(e){
 function drawTide(preds,now,selectedX){
   var cv=document.getElementById('tideC');
   if(!cv)return;
-  // If canvas has no width yet (panel not rendered), retry after layout settles
-  if(!cv.offsetWidth){
-    setTimeout(function(){drawTide(preds,now,selectedX);},150);
-    return;
-  }
   var dpr=window.devicePixelRatio||1;
   var H=160;
-  cv.width=cv.offsetWidth*dpr;cv.height=H*dpr;
+  var W=cv.offsetWidth||cv.clientWidth||300;cv.width=W*dpr;cv.height=H*dpr;
   var ctx=cv.getContext('2d');ctx.scale(dpr,dpr);
   var W=cv.offsetWidth;
   _tidePredsCache=preds;
