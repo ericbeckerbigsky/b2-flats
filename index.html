@@ -1995,42 +1995,34 @@ function drawTide(preds,now,selectedX){
   if(!cv)return;
   var dpr=window.devicePixelRatio||1;
   var H=160;
-  var W=cv.offsetWidth||cv.clientWidth||300;cv.width=W*dpr;cv.height=H*dpr;
-  var ctx=cv.getContext('2d');ctx.scale(dpr,dpr);
-  var W=cv.offsetWidth;
+  var W=cv.offsetWidth||cv.clientWidth||300;
+  cv.width=W*dpr; cv.height=H*dpr;
+  var ctx=cv.getContext('2d'); ctx.scale(dpr,dpr);
   _tidePredsCache=preds;
-  ctx.fillStyle='#000';ctx.fillRect(0,0,W,H);
+  ctx.fillStyle='#000'; ctx.fillRect(0,0,W,H);
 
   if(preds&&preds.length>1){
     var t0=new Date(preds[0].t).getTime();
     var tN=new Date(preds[preds.length-1].t).getTime();
-    // Extend tN to end of day so NOW marker always shows even after last prediction
     var endOfDay=new Date(now.getFullYear(),now.getMonth(),now.getDate(),23,59,59).getTime();
     if(tN<endOfDay) tN=endOfDay;
     var vs=preds.map(function(p){return parseFloat(p.v);});
     var mn=Math.min.apply(null,vs),mx=Math.max.apply(null,vs),rng=mx-mn||0.1;
     var N=300;
 
-    // Cosine-interpolated smooth curve
-    // tN is extended to end of day — but NOAA preds end earlier
-    // For the region AFTER the last pred, continue the cosine curve
-    // by extrapolating one more virtual H/L point beyond the last pred
-    var lastPred = preds[preds.length-1];
-    var lastV = vs[vs.length-1];
-    // Add a virtual continuation point one full semi-cycle after the last pred
-    // This lets the curve fall/rise naturally past the last real data point
-    var lastT = new Date(lastPred.t).getTime();
-    var secondLastT = preds.length>1 ? new Date(preds[preds.length-2].t).getTime() : lastT - 6*3600000;
-    var halfCycleMs = Math.abs(lastT - secondLastT); // ms between last two H/L events
-    var virtT = lastT + halfCycleMs; // next virtual H/L
-    var virtV = vs.length>1 ? vs[vs.length-2] : lastV; // alternate between prev values
+    // Virtual continuation past last pred to avoid right-edge spike
+    var lastT=new Date(preds[preds.length-1].t).getTime();
+    var secondLastT=preds.length>1?new Date(preds[preds.length-2].t).getTime():lastT-6*3600000;
+    var halfCycleMs=Math.abs(lastT-secondLastT);
+    var virtT=lastT+halfCycleMs;
+    var virtV=vs.length>1?vs[vs.length-2]:vs[vs.length-1];
 
+    // Cosine-interpolated smooth curve (300 points)
     var smooth=[];
     for(var si=0;si<=N;si++){
       var frac=si/N;
       var tAt=t0+frac*(tN-t0);
-      var sv=lastV; // default: hold last known value
-      // Check real pred pairs first
+      var sv=vs[vs.length-1];
       var found=false;
       for(var j=0;j<preds.length-1;j++){
         var tj=new Date(preds[j].t).getTime();
@@ -2039,30 +2031,30 @@ function drawTide(preds,now,selectedX){
           var mu=(tAt-tj)/(tj1-tj);
           var mu2=(1-Math.cos(mu*Math.PI))/2;
           sv=vs[j]*(1-mu2)+vs[j+1]*mu2;
-          found=true;break;
+          found=true; break;
         }
       }
-      // After last real pred: cosine-extrapolate to virtual next turning point
       if(!found&&tAt>=lastT&&tAt<=virtT){
         var mu=(tAt-lastT)/(virtT-lastT);
         var mu2=(1-Math.cos(mu*Math.PI))/2;
-        sv=lastV*(1-mu2)+virtV*mu2;
+        sv=vs[vs.length-1]*(1-mu2)+virtV*mu2;
       }
-      smooth.push({x:frac*W,y:H-6-((sv-mn)/rng)*(H-14),v:sv});
+      smooth.push({x:frac*W, y:H-6-((sv-mn)/rng)*(H-14), v:sv});
     }
 
-    // Draw curve
+    // Stroke
     ctx.beginPath();
     smooth.forEach(function(pt,i){i===0?ctx.moveTo(pt.x,pt.y):ctx.lineTo(pt.x,pt.y);});
-    ctx.strokeStyle='#00E5FF';ctx.lineWidth=2;ctx.stroke();
-    // Fill: rebuild path explicitly so the fill closes cleanly at the bottom
-    // (reusing the stroke path causes a diagonal artifact from last smooth point)
+    ctx.strokeStyle='#00E5FF'; ctx.lineWidth=2; ctx.stroke();
+
+    // Fill (new path — avoids diagonal artifact)
     ctx.beginPath();
     smooth.forEach(function(pt,i){i===0?ctx.moveTo(pt.x,pt.y):ctx.lineTo(pt.x,pt.y);});
-    ctx.lineTo(W,H);ctx.lineTo(0,H);ctx.closePath();
+    ctx.lineTo(W,H); ctx.lineTo(0,H); ctx.closePath();
     var g=ctx.createLinearGradient(0,0,0,H);
-    g.addColorStop(0,'rgba(0,229,255,.25)');g.addColorStop(1,'rgba(0,229,255,.02)');
-    ctx.fillStyle=g;ctx.fill();
+    g.addColorStop(0,'rgba(0,229,255,.25)');
+    g.addColorStop(1,'rgba(0,229,255,.02)');
+    ctx.fillStyle=g; ctx.fill();
 
     // H/L labels
     preds.forEach(function(p,i){
@@ -2085,63 +2077,79 @@ function drawTide(preds,now,selectedX){
       var sv2=smooth[si2].v;
       var sy=H-6-((sv2-mn)/rng)*(H-14);
       var selTime=new Date(t0+(tN-t0)*sf);
-      ctx.strokeStyle='#E53E3E';ctx.lineWidth=1.5;ctx.setLineDash([3,3]);
-      ctx.beginPath();ctx.moveTo(selX,0);ctx.lineTo(selX,H);ctx.stroke();ctx.setLineDash([]);
-      ctx.beginPath();ctx.arc(selX,sy,4,0,Math.PI*2);
-      ctx.fillStyle='#E53E3E';ctx.fill();
+      ctx.strokeStyle='#E53E3E'; ctx.lineWidth=1.5; ctx.setLineDash([3,3]);
+      ctx.beginPath(); ctx.moveTo(selX,0); ctx.lineTo(selX,H); ctx.stroke(); ctx.setLineDash([]);
+      ctx.beginPath(); ctx.arc(selX,sy,4,0,Math.PI*2);
+      ctx.fillStyle='#E53E3E'; ctx.fill();
       var hh=selTime.getHours(),mm=String(selTime.getMinutes()).padStart(2,'0');
-      var ap=hh>=12?'pm':'am';hh=hh%12||12;
+      var ap=hh>=12?'pm':'am'; hh=hh%12||12;
       var tlbl=hh+':'+mm+ap+' '+sv2.toFixed(1)+'ft';
       ctx.font='bold 9px Share Tech Mono,monospace';
       var tlw=ctx.measureText(tlbl).width;
       var tlx=Math.min(selX+5,W-tlw-4);
-      ctx.fillStyle='rgba(0,0,0,0.75)';ctx.fillRect(tlx-2,sy-20,tlw+4,13);
-      ctx.fillStyle='#FF6B6B';ctx.fillText(tlbl,tlx,sy-10);
+      ctx.fillStyle='rgba(0,0,0,0.75)'; ctx.fillRect(tlx-2,sy-20,tlw+4,13);
+      ctx.fillStyle='#FF6B6B'; ctx.fillText(tlbl,tlx,sy-10);
     }
 
-    // NOW marker (gold, always on top)
+    // NOW marker (gold)
     var nt=now.getTime();
     if(nt>=t0&&nt<=tN){
       var nf=(nt-t0)/(tN-t0),nx=nf*W;
       var ni=Math.max(0,Math.min(N,Math.round(nf*N)));
       var nv2=smooth[ni].v;
       var ny=H-6-((nv2-mn)/rng)*(H-14);
-      ctx.strokeStyle='#FFD700';ctx.lineWidth=2;ctx.setLineDash([4,3]);
-      ctx.beginPath();ctx.moveTo(nx,0);ctx.lineTo(nx,H);ctx.stroke();ctx.setLineDash([]);
-      ctx.beginPath();ctx.arc(nx,ny,7,0,Math.PI*2);
-      ctx.fillStyle='rgba(255,215,0,0.25)';ctx.fill();
-      ctx.beginPath();ctx.arc(nx,ny,4.5,0,Math.PI*2);
-      ctx.fillStyle='#FFD700';ctx.fill();ctx.strokeStyle='#000';ctx.lineWidth=1;ctx.stroke();
+      ctx.strokeStyle='#FFD700'; ctx.lineWidth=2; ctx.setLineDash([4,3]);
+      ctx.beginPath(); ctx.moveTo(nx,0); ctx.lineTo(nx,H); ctx.stroke(); ctx.setLineDash([]);
+      ctx.beginPath(); ctx.arc(nx,ny,7,0,Math.PI*2);
+      ctx.fillStyle='rgba(255,215,0,0.25)'; ctx.fill();
+      ctx.beginPath(); ctx.arc(nx,ny,4.5,0,Math.PI*2);
+      ctx.fillStyle='#FFD700'; ctx.fill(); ctx.strokeStyle='#000'; ctx.lineWidth=1; ctx.stroke();
       var nl='\u25C6 NOW';
       ctx.font='bold 9px Share Tech Mono,monospace';
       var nlw=ctx.measureText(nl).width;
-      var nlx=Math.min(nx+8,W-nlw-4),nly=Math.max(ny-8,10);
-      ctx.fillStyle='rgba(0,0,0,0.65)';ctx.fillRect(nlx-2,nly-9,nlw+4,12);
-      ctx.fillStyle='#FFD700';ctx.fillText(nl,nlx,nly);
+      var nlx=nx+8+nlw>W?nx-nlw-10:nx+8;
+      var nly=Math.max(ny-8,10);
+      ctx.fillStyle='rgba(0,0,0,0.65)'; ctx.fillRect(nlx-2,nly-9,nlw+4,12);
+      ctx.fillStyle='#FFD700'; ctx.fillText(nl,nlx,nly);
     }
+
   }else{
+    // Fallback sinusoidal curve when no NOAA data
     var tt=TIDE_TYPES[ST.region]||TIDE_TYPES.keys;
-    var offsets={keys:3,pine:5,belize:1.5,mexico:2.8};
-    var offset=offsets[ST.region]||3;
-    var ch=now.getHours()+now.getMinutes()/60;
+    var offsets2={keys:3,pine:5,belize:1.5,mexico:2.8};
+    var offset2=offsets2[ST.region]||3;
+    var ch2=now.getHours()+now.getMinutes()/60;
     ctx.beginPath();
     for(var x=0;x<=W;x++){
-      var h=x/W*24,y2=tt.rangeScale*1.5*Math.sin((h-offset)*Math.PI/(tt.cycleHrs/2))+tt.rangeScale*1.0;
+      var h2=x/W*24;
+      var y2=tt.rangeScale*1.5*Math.sin((h2-offset2)*Math.PI/(tt.cycleHrs/2))+tt.rangeScale*1.0;
       var yp=H-6-(Math.max(0,y2)/(tt.rangeScale*3.5))*(H-14);
       x===0?ctx.moveTo(x,yp):ctx.lineTo(x,yp);
     }
-    ctx.strokeStyle='#00E5FF';ctx.lineWidth=2;ctx.stroke();
-    ctx.lineTo(W,H);ctx.lineTo(0,H);ctx.closePath();
+    ctx.strokeStyle='#00E5FF'; ctx.lineWidth=2; ctx.stroke();
+    // Fill (new path)
+    ctx.beginPath();
+    for(var x=0;x<=W;x++){
+      var h2=x/W*24;
+      var y2=tt.rangeScale*1.5*Math.sin((h2-offset2)*Math.PI/(tt.cycleHrs/2))+tt.rangeScale*1.0;
+      var yp=H-6-(Math.max(0,y2)/(tt.rangeScale*3.5))*(H-14);
+      x===0?ctx.moveTo(x,yp):ctx.lineTo(x,yp);
+    }
+    ctx.lineTo(W,H); ctx.lineTo(0,H); ctx.closePath();
     var gf=ctx.createLinearGradient(0,0,0,H);
-    gf.addColorStop(0,'rgba(0,229,255,.2)');gf.addColorStop(1,'rgba(0,229,255,.02)');
-    ctx.fillStyle=gf;ctx.fill();
-    var nx2=ch/24*W,cv2f=tt.rangeScale*1.5*Math.sin((ch-offset)*Math.PI/(tt.cycleHrs/2))+tt.rangeScale;
+    gf.addColorStop(0,'rgba(0,229,255,.2)');
+    gf.addColorStop(1,'rgba(0,229,255,.02)');
+    ctx.fillStyle=gf; ctx.fill();
+    var nx2=ch2/24*W;
+    var cv2f=tt.rangeScale*1.5*Math.sin((ch2-offset2)*Math.PI/(tt.cycleHrs/2))+tt.rangeScale;
     var cyp=H-6-(Math.max(0,cv2f)/(tt.rangeScale*3.5))*(H-14);
-    ctx.strokeStyle='#FFD700';ctx.lineWidth=1.5;ctx.setLineDash([4,4]);
-    ctx.beginPath();ctx.moveTo(nx2,0);ctx.lineTo(nx2,H);ctx.stroke();ctx.setLineDash([]);
-    ctx.fillStyle='#FFD700';ctx.beginPath();ctx.arc(nx2,cyp,4,0,Math.PI*2);ctx.fill();
-    ctx.fillStyle='#FFD700';ctx.font='bold 8px Share Tech Mono,monospace';ctx.fillText('\u25C6 NOW',nx2+4,cyp-4);
-    ctx.fillStyle='rgba(255,255,255,.3)';ctx.fillText(tt.label+' (computed)',4,H-3);
+    ctx.strokeStyle='#FFD700'; ctx.lineWidth=1.5; ctx.setLineDash([4,4]);
+    ctx.beginPath(); ctx.moveTo(nx2,0); ctx.lineTo(nx2,H); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle='#FFD700'; ctx.beginPath(); ctx.arc(nx2,cyp,4,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#FFD700'; ctx.font='bold 8px Share Tech Mono,monospace';
+    ctx.fillText('\u25C6 NOW',nx2+4,cyp-4);
+    ctx.fillStyle='rgba(255,255,255,.3)';
+    ctx.fillText(tt.label+' (computed)',4,H-3);
   }
 }
 
