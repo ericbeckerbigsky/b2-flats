@@ -1233,12 +1233,27 @@ function applyOffsets(preds, offsets){
     var isH = p.type==='H';
     var minOff = isH ? offsets.hiOff : offsets.loOff;
     var htFactor = isH ? offsets.hiHt : offsets.loHt;
-    // Shift time by offset minutes
-    var dt = new Date(p.t);
-    dt.setMinutes(dt.getMinutes() + minOff);
-    // Scale height by factor
+    // Shift time by offset minutes using local time string arithmetic
+    // (NOT new Date().toISOString() which converts to UTC and corrupts the date)
+    var parts = p.t.split('T');
+    var dateParts = parts[0].split('-');
+    var timeParts = (parts[1]||'00:00').split(':');
+    var totalMins = parseInt(timeParts[0])*60 + parseInt(timeParts[1]) + minOff;
+    // Handle day rollover
+    var dayOffset = 0;
+    if(totalMins < 0){ dayOffset = -1; totalMins += 1440; }
+    else if(totalMins >= 1440){ dayOffset = 1; totalMins -= 1440; }
+    var newH = String(Math.floor(totalMins/60)).padStart(2,'0');
+    var newM = String(totalMins%60).padStart(2,'0');
+    // Adjust date if needed
+    var newDate = parts[0];
+    if(dayOffset !== 0){
+      var d = new Date(dateParts[0]+'-'+dateParts[1]+'-'+dateParts[2]+'T12:00:00');
+      d.setDate(d.getDate()+dayOffset);
+      newDate = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    }
     var newV = (parseFloat(p.v) * htFactor).toFixed(2);
-    return {t: dt.toISOString().replace('Z',''), v: newV, type: p.type};
+    return {t: newDate+'T'+newH+':'+newM, v: newV, type: p.type};
   });
 }
 
@@ -3051,6 +3066,7 @@ async function go(){
   if(ST.busy)return;ST.busy=true;
   try{
     const stn=nearestStation(ST.lat,ST.lon);
+  _tideSelX=-1; // Reset tap selection when location changes
     // Fetch all in parallel
     const[wxOk,tideOk]=await Promise.all([fetchWeather(),fetchNOAATides(stn.id)]);
     await Promise.all([fetchWaterTemp(stn.id),fetchBaroPressure()]);
