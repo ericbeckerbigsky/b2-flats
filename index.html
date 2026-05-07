@@ -781,10 +781,43 @@ const STATIONS=[
   {id:'8724699',name:'Dry Tortugas, Garden Key',        lat:24.6272,lon:-82.8731,side:'ocean',
    ref:'8724580', hiOff:-18, loOff:-22, hiHt:1.02, loHt:1.00},
 
-  // ── GULF COAST (no offset system — direct fetch) ──
-  {id:'8725110',name:'Naples, FL',                      lat:26.1328,lon:-81.8067,side:'gulf', primary:true},
-  {id:'8725520',name:'Fort Myers, FL',                  lat:26.6478,lon:-81.8717,side:'gulf', primary:true},
-  {id:'8726520',name:'St. Petersburg, FL',              lat:27.7606,lon:-82.6272,side:'gulf', primary:true},
+  // ── GULF COAST / PINE ISLAND / SANIBEL / CAPTIVA ─────────────────
+  // PRIMARY harmonic stations — fetched directly, no offsets
+  {id:'8725520',name:'Fort Myers, Caloosahatchee River', lat:26.6478,lon:-81.8717,side:'gulf',primary:true},
+  {id:'8725110',name:'Naples, FL',                       lat:26.1328,lon:-81.8067,side:'gulf',primary:true},
+  {id:'8726520',name:'St. Petersburg, FL',               lat:27.7606,lon:-82.6272,side:'gulf',primary:true},
+
+  // PINE ISLAND SOUND (inner, protected water) — ref: Fort Myers (8725520)
+  // These are the correct stations for fishing inside the sound / bay side
+  {id:'8725393',name:'St. James City, Pine Island',      lat:26.4917,lon:-82.0783,side:'gulf',
+   ref:'8725520', hiOff:-25, loOff:-20, hiHt:0.95, loHt:0.97},
+  {id:'8725417',name:'Captiva Island, Pine Is. Sound',   lat:26.5200,lon:-82.1833,side:'gulf',
+   ref:'8725520', hiOff:-35, loOff:-30, hiHt:0.92, loHt:0.95},
+  {id:'8725506',name:'Matlacha Pass',                    lat:26.6283,lon:-82.0633,side:'gulf',
+   ref:'8725520', hiOff:-15, loOff:-10, hiHt:0.96, loHt:0.98},
+  {id:'8725541',name:'Bokeelia, Charlotte Harbor',       lat:26.6983,lon:-82.1483,side:'gulf',
+   ref:'8725520', hiOff:+15, loOff:+20, hiHt:1.05, loHt:1.08},
+  {id:'8725528',name:'Pine Island, Charlotte Harbor',    lat:26.6567,lon:-82.1133,side:'gulf',
+   ref:'8725520', hiOff:+10, loOff:+15, hiHt:1.03, loHt:1.05},
+
+  // GULF SIDE / OUTER WATER — ref: Fort Myers (8725520)
+  // These are the correct stations for Gulf-side / Captiva Pass / outer beach
+  {id:'8725383',name:'Captiva Island, Gulf Side',        lat:26.5050,lon:-82.1933,side:'gulf',
+   ref:'8725520', hiOff:-55, loOff:-50, hiHt:0.88, loHt:0.90},
+  {id:'8725488',name:'North Captiva Island',             lat:26.5883,lon:-82.1833,side:'gulf',
+   ref:'8725520', hiOff:-50, loOff:-45, hiHt:0.87, loHt:0.89},
+
+  // SANIBEL / SAN CARLOS BAY — ref: Fort Myers (8725520)
+  {id:'8725302',name:'Sanibel Island, Punta Rassa',      lat:26.5017,lon:-82.0017,side:'gulf',
+   ref:'8725520', hiOff:-45, loOff:-40, hiHt:0.90, loHt:0.92},
+
+  // CHARLOTTE HARBOR / BOCA GRANDE — ref: Fort Myers (8725520)
+  {id:'8725577',name:'Port Boca Grande, Charlotte Harbor',lat:26.7483,lon:-82.2600,side:'gulf',
+   ref:'8725520', hiOff:+30, loOff:+35, hiHt:1.10, loHt:1.12},
+
+  // ESTERO BAY / BONITA — ref: Naples (8725110)
+  {id:'8725755',name:'Estero Bay, Estero Island',        lat:26.4133,lon:-81.8567,side:'gulf',
+   ref:'8725110', hiOff:+20, loOff:+25, hiHt:1.05, loHt:1.07},
 
   // ── INTERNATIONAL (Open-Meteo FES2022 tidal model) ──
   {id:'BELIZE_CITY',name:'Belize City',                 lat:17.498, lon:-88.188, side:'ocean',intl:true},
@@ -1219,7 +1252,8 @@ function applyOffsets(preds, offsets){
 // lowering observed tides 0.1-0.5ft below prediction.
 // Strong SE/S/SW winds pile water into Florida Bay, raising tides.
 function windSurgeAdjustment(preds, windSpd, windDir, side){
-  if(!windSpd||windSpd<12||side!=='bay') return preds;
+  // Apply wind surge to bay side (Keys) AND gulf side (Pine Island Sound)
+  if(!windSpd||windSpd<12||(side!=='bay'&&side!=='gulf')) return preds;
   // Determine if wind is pushing water out (NW-N-NE: 315-45°) 
   // or into (SE-S-SW: 135-225°) Florida Bay
   var intoNorth = (windDir>=315||windDir<=45);  // pushes OUT of bay
@@ -1244,21 +1278,22 @@ async function fetchNOAATides(stationId){
 
   // ── TideEngine: determine fetch strategy ──────────────────────
   var meta=getStationMeta(stationId);
-  var isKeysStation=(ST.region==='keys'&&meta&&!meta.intl&&meta.side!=='gulf');
+  // Apply TideEngine offsets for Keys AND Pine Island / Gulf regions
+  var isOffsetRegion=(meta&&!meta.intl&&meta.ref&&!meta.primary);
   var fetchId=stationId;
   var offsets=null;
   var offsetDesc='';
 
-  if(isKeysStation&&meta&&meta.ref&&!meta.primary){
-    // Subordinate station: fetch from primary, apply offsets
+  if(isOffsetRegion){
+    // Subordinate station: fetch from primary reference, apply offsets
     fetchId=meta.ref;
-    // Check if pin is between two subordinates → interpolated offsets
-    var interp=getInterpolatedOffsets(ST.lat,ST.lon,meta.side);
+    // For Keys: also try interpolating between two nearby subordinates
+    var interp=(ST.region==='keys')?getInterpolatedOffsets(ST.lat,ST.lon,meta.side):null;
     offsets=interp||meta;
     offsetDesc=interp&&interp.interpolated?
       ' [interp: '+interp.between+']':
       ' ['+meta.name+' offsets]';
-  }else if(isKeysStation&&meta&&meta.primary){
+  }else if(meta&&meta.primary){
     // Primary station: fetch directly, no offsets
     offsetDesc=' [primary]';
   }
@@ -1735,7 +1770,10 @@ function calcScores(){
   var isNight     = timeDecimal>=22.5 || timeDecimal<4.0;
 
   // ── TARPON SCORE ──
-  // Peak: dawn & dusk. Good: pre-dawn, morning, afternoon. Poor: mid-day, night.
+  // Peak: dawn & dusk with MOVING water. Tide is a gate — slack kills the bite
+  // regardless of time. Formula: tide is 60% weight, time 40%.
+  // Additional gate: SLACK tide caps the score at 45% (FAIR) regardless of time.
+  // Tarpon need current to feed — slack water makes them lock up.
   var tpTimeFactor = isPreDawn   ? 0.80 :
                      isDawn      ? 1.00 :
                      isMorning   ? 0.65 :
@@ -1745,7 +1783,9 @@ function calcScores(){
                      isEvening   ? 0.60 :
                                    0.20;  // night
 
-  var tpS=Math.round(((tideMoving*0.5)+(tpTimeFactor*0.5))*100);
+  var tpRaw = Math.round(((tideMoving*0.60)+(tpTimeFactor*0.40))*100);
+  // SLACK WATER GATE: cap at 45% — tarpon shut down in dead water
+  var tpS = (ST.tideFlow==='SLACK') ? Math.min(tpRaw, 45) : tpRaw;
 
   var tpDesc = isPreDawn   ? 'PRE-DAWN — black/purple flies, start moving' :
                isDawn      ? 'GOLDEN HOUR — prime window, dark flies' :
@@ -2808,20 +2848,36 @@ async function viewStationTide(stationId,stationName){
 
       var t0=new Date(preds[0].t).getTime();
       var tN=new Date(preds[preds.length-1].t).getTime();
+      // Extend tN to end of day so NOW marker always shows
+      var endOfDay=new Date(now.getFullYear(),now.getMonth(),now.getDate(),23,59,59).getTime();
+      if(tN<endOfDay) tN=endOfDay;
       var vs=preds.map(function(p){return parseFloat(p.v);});
       var mn=Math.min.apply(null,vs),mx=Math.max.apply(null,vs),rng=mx-mn||0.1;
+
+      // Virtual continuation past last pred (prevents spike artifact)
+      var lastT=new Date(preds[preds.length-1].t).getTime();
+      var secondLastT=preds.length>1?new Date(preds[preds.length-2].t).getTime():lastT-6*3600000;
+      var halfCycleMs=Math.abs(lastT-secondLastT);
+      var virtT=lastT+halfCycleMs;
+      var virtV=vs.length>1?vs[vs.length-2]:vs[vs.length-1];
 
       // Build smooth cosine curve
       var N=300,smooth=[];
       for(var si=0;si<=N;si++){
-        var frac=si/N,tAt=t0+frac*(tN-t0),sv=vs[0];
+        var frac=si/N,tAt=t0+frac*(tN-t0),sv=vs[vs.length-1];
+        var found=false;
         for(var j=0;j<preds.length-1;j++){
           var tj=new Date(preds[j].t).getTime(),tj1=new Date(preds[j+1].t).getTime();
           if(tAt>=tj&&tAt<=tj1){
             var mu=(tAt-tj)/(tj1-tj);
             var mu2=(1-Math.cos(mu*Math.PI))/2;
-            sv=vs[j]*(1-mu2)+vs[j+1]*mu2;break;
+            sv=vs[j]*(1-mu2)+vs[j+1]*mu2;found=true;break;
           }
+        }
+        if(!found&&tAt>=lastT&&tAt<=virtT){
+          var mu=(tAt-lastT)/(virtT-lastT);
+          var mu2=(1-Math.cos(mu*Math.PI))/2;
+          sv=vs[vs.length-1]*(1-mu2)+virtV*mu2;
         }
         smooth.push({x:frac*W,y:H-8-((sv-mn)/rng)*(H-18),v:sv,t:tAt});
       }
@@ -2858,8 +2914,11 @@ async function viewStationTide(stationId,stationName){
           ctx.fillStyle='#FFD700';ctx.fill();
           ctx.font='bold 8px Share Tech Mono,monospace';
           var nl='\u25C6 NOW';
-          ctx.fillStyle='rgba(0,0,0,0.7)';ctx.fillRect(nx+5,npt.y-14,38,12);
-          ctx.fillStyle='#FFD700';ctx.fillText(nl,nx+7,npt.y-5);
+          var nlw=ctx.measureText(nl).width;
+          // Clamp label so it never goes off right edge
+          var nlx=nx+7+nlw>W?nx-nlw-9:nx+7;
+          ctx.fillStyle='rgba(0,0,0,0.7)';ctx.fillRect(nlx-2,npt.y-14,nlw+4,12);
+          ctx.fillStyle='#FFD700';ctx.fillText(nl,nlx,npt.y-5);
         }
         // Selected tide line (red)
         if(selX>=0&&selX<=W){
