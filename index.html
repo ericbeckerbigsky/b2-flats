@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#000000">
-<title>B2 Flats Stalker v202605010519</title>
+<title>B2 Flats Stalker v20260506</title>
 <link rel="manifest" href="manifest.json">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -2054,6 +2054,10 @@ function drawTide(preds,now,selectedX){
     ctx.beginPath();
     smooth.forEach(function(pt,i){i===0?ctx.moveTo(pt.x,pt.y):ctx.lineTo(pt.x,pt.y);});
     ctx.strokeStyle='#00E5FF';ctx.lineWidth=2;ctx.stroke();
+    // Fill: rebuild path explicitly so the fill closes cleanly at the bottom
+    // (reusing the stroke path causes a diagonal artifact from last smooth point)
+    ctx.beginPath();
+    smooth.forEach(function(pt,i){i===0?ctx.moveTo(pt.x,pt.y):ctx.lineTo(pt.x,pt.y);});
     ctx.lineTo(W,H);ctx.lineTo(0,H);ctx.closePath();
     var g=ctx.createLinearGradient(0,0,0,H);
     g.addColorStop(0,'rgba(0,229,255,.25)');g.addColorStop(1,'rgba(0,229,255,.02)');
@@ -2884,6 +2888,9 @@ async function viewStationTide(stationId,stationName){
         ctx.beginPath();
         smooth.forEach(function(pt,i){i===0?ctx.moveTo(pt.x,pt.y):ctx.lineTo(pt.x,pt.y);});
         ctx.strokeStyle='#00E5FF';ctx.lineWidth=2;ctx.stroke();
+        // Rebuild path for fill to avoid diagonal artifact from stroke endpoint
+        ctx.beginPath();
+        smooth.forEach(function(pt,i){i===0?ctx.moveTo(pt.x,pt.y):ctx.lineTo(pt.x,pt.y);});
         ctx.lineTo(W,H);ctx.lineTo(0,H);ctx.closePath();
         var g=ctx.createLinearGradient(0,0,0,H);
         g.addColorStop(0,'rgba(0,229,255,.25)');g.addColorStop(1,'rgba(0,229,255,.03)');
@@ -3051,8 +3058,25 @@ setInterval(()=>{document.getElementById('clk').textContent=new Date().toLocaleS
 
 // Boot
 // Cache bypass: append timestamp to URL so every open fetches fresh content
+// ── CACHE BUSTING ───────────────────────────────────────────────
+// Compares the current build version against what was last loaded.
+// If different, forces a hard network reload — bypasses PWA cache,
+// browser cache, and service worker cache on all platforms.
 (function(){
-  if(window.location.search.indexOf('_t=')===-1){
+  var BUILD='20260506';
+  try{
+    var last=localStorage.getItem('b2_build');
+    if(last!==BUILD){
+      localStorage.setItem('b2_build',BUILD);
+      if(last){
+        // Different version cached — force fresh load from network
+        window.location.replace(window.location.pathname+'?v='+BUILD);
+        return;
+      }
+    }
+  }catch(e){}
+  // Also append timestamp to URL so GitHub CDN always serves fresh HTML
+  if(window.location.search.indexOf('_t=')===-1&&window.location.search.indexOf('?v=')===-1){
     var sep=window.location.search?'&':'?';
     window.history.replaceState(null,'',window.location.pathname+
       window.location.search+sep+'_t='+Date.now());
