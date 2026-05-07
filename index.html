@@ -1370,8 +1370,9 @@ async function fetchNOAATides(stationId){
     var alTEl=document.getElementById('alT');
     if(alTEl)alTEl.textContent='TIDE: '+ST.tideHt+'ft '+ST.tidePhase+' \xb7 '+srcLabel;
     setSrc('srcTide','TIDE: '+srcLabel+' \u2713','ok');
+    ST.tidePreds=chartPreds;
     drawTide(chartPreds,now);
-    setTimeout(function(){drawTide(chartPreds,new Date());},300);
+    setTimeout(function(){drawTide(ST.tidePreds,new Date());},400);
     return true;
   }catch(e){
     console.warn('NOAA tide:',e.message);
@@ -1991,7 +1992,12 @@ function tideCanvasTap(e){
 
 function drawTide(preds,now,selectedX){
   var cv=document.getElementById('tideC');
-  if(!cv||!cv.offsetWidth)return;
+  if(!cv)return;
+  // If canvas has no width yet (panel not rendered), retry after layout settles
+  if(!cv.offsetWidth){
+    setTimeout(function(){drawTide(preds,now,selectedX);},150);
+    return;
+  }
   var dpr=window.devicePixelRatio||1;
   var H=160;
   cv.width=cv.offsetWidth*dpr;cv.height=H*dpr;
@@ -3046,6 +3052,8 @@ async function go(){
     renderSpots();renderAmenities();updateFlyMatrix();
     renderForecast();
     startWindAnimation();
+    // Guaranteed tide chart redraw after all fetches and layout settle
+    setTimeout(function(){ if(ST.tidePreds&&ST.tidePreds.length) drawTide(ST.tidePreds,new Date()); },500);
     // Deferred tide redraw ensures canvas has painted before drawing
     setTimeout(function(){ drawTide(ST.tidePreds,new Date()); },250);
     if(!tideOk)tideFallback();
