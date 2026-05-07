@@ -991,7 +991,7 @@ const ST={
 let map,pinMarker,gpsMarker,radarCircle;
 
 function initMap(){
-  map=L.map('map',{center:[24.6450,-81.5333],zoom:10});
+  map=L.map('map',{center:[24.6450,-81.5333],zoom:10,tap:true,tapTolerance:15});
 
   // ESRI World Street Map — full color, file:// compatible, no referrer restriction
   const street=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
@@ -1028,6 +1028,29 @@ function initMap(){
   pinMarker.bindTooltip('📍 Drag to any location',{permanent:false,direction:'top'});
 
   map.on('click',e=>setPin(e.latlng.lat,e.latlng.lng));
+  // Backup touch handler for iOS/Android (Leaflet 1.9 removed tap plugin)
+  var mapEl=document.getElementById('map');
+  var touchStartX,touchStartY,touchStartTime;
+  mapEl.addEventListener('touchstart',function(e){
+    touchStartX=e.touches[0].clientX;
+    touchStartY=e.touches[0].clientY;
+    touchStartTime=Date.now();
+  },{passive:true});
+  mapEl.addEventListener('touchend',function(e){
+    if(!e.changedTouches.length)return;
+    var t=e.changedTouches[0];
+    var dx=Math.abs(t.clientX-touchStartX);
+    var dy=Math.abs(t.clientY-touchStartY);
+    var dt=Date.now()-touchStartTime;
+    // Only fire if: small movement (tap not drag) and quick (not long-press)
+    if(dx<10&&dy<10&&dt<400){
+      var rect=mapEl.getBoundingClientRect();
+      var latlng=map.containerPointToLatLng(
+        L.point(t.clientX-rect.left, t.clientY-rect.top)
+      );
+      setPin(latlng.lat,latlng.lng);
+    }
+  },{passive:true});
   pinMarker.on('dragend',e=>{const p=e.target.getLatLng();setPin(p.lat,p.lng);});
   // Redraw wind overlay on map movement, zoom, and when tiles finish
   map.on('moveend', function(){ drawWindFlowMap(); });
@@ -1280,66 +1303,65 @@ function windSurgeAdjustment(preds, windSpd, windDir, side){
 
 async function fetchNOAATides(stationId){
   var now=new Date();
-  var yr=now.getFullYear(),mo=String(now.getMonth()+1).padStart(2,'0'),dy=String(now.getDate()).padStart(2,'0');
+  var yr=now.getFullYear();
+  var mo=String(now.getMonth()+1).padStart(2,'0');
+  var dy=String(now.getDate()).padStart(2,'0');
   var today=yr+''+mo+''+dy;
-  var tom=new Date(now);tom.setDate(tom.getDate()+1);
-  var yr2=tom.getFullYear(),mo2=String(tom.getMonth()+1).padStart(2,'0'),dy2=String(tom.getDate()).padStart(2,'0');
+  var tom=new Date(now); tom.setDate(tom.getDate()+1);
+  var yr2=tom.getFullYear();
+  var mo2=String(tom.getMonth()+1).padStart(2,'0');
+  var dy2=String(tom.getDate()).padStart(2,'0');
   var tomorrow=yr2+''+mo2+''+dy2;
+  var todayStr=yr+'-'+mo+'-'+dy;
 
-  // ── TideEngine: determine fetch strategy ──────────────────────
+  // Determine fetch strategy: subordinate → fetch primary and apply offsets
   var meta=getStationMeta(stationId);
-  // Apply TideEngine offsets for Keys AND Pine Island / Gulf regions
-  var isOffsetRegion=(meta&&!meta.intl&&meta.ref&&!meta.primary);
-  var fetchId=stationId;
-  var offsets=null;
-  var offsetDesc='';
+  var isSubordinate=(meta&&!meta.intl&&meta.ref&&!meta.primary);
+  var fetchId=isSubordinate?meta.ref:stationId;
+  var offsets=isSubordinate?meta:null;
+  var offsetDesc=isSubordinate?' ['+meta.name+']':meta&&meta.primary?' [primary]':'';
 
-  if(isOffsetRegion){
-    // Subordinate station: fetch from primary reference, apply offsets
-    fetchId=meta.ref;
-    // For Keys: also try interpolating between two nearby subordinates
-    var interp=(ST.region==='keys')?getInterpolatedOffsets(ST.lat,ST.lon,meta.side):null;
-    offsets=interp||meta;
-    offsetDesc=interp&&interp.interpolated?
-      ' [interp: '+interp.between+']':
-      ' ['+meta.name+' offsets]';
-  }else if(meta&&meta.primary){
-    // Primary station: fetch directly, no offsets
-    offsetDesc=' [primary]';
+  // For Keys subordinates: try interpolating offsets between nearby stations
+  if(isSubordinate&&ST.region==='keys'){
+    var interp=getInterpolatedOffsets(ST.lat,ST.lon,meta.side);
+    if(interp){offsets=interp;offsetDesc=interp.interpolated?' [interp]':offsetDesc;}
   }
 
-  var url='https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?begin_date='+today+
-    '&end_date='+tomorrow+'&station='+fetchId+
+  var url='https://api.tidesandcurrents.noaa.gov/api/prod/datagetter'+
+    '?begin_date='+today+'&end_date='+tomorrow+
+    '&station='+fetchId+
     '&product=predictions&datum=MLLW&time_zone=lst_ldt&interval=hilo'+
     '&units=english&application=B2FlatsStalker&format=json';
 
   try{
-    var r=await fetch(url);var d=await r.json();
+    var r=await fetch(url);
+    var d=await r.json();
     if(d.error||(!(d.predictions&&d.predictions.length)))
-      throw new Error((d.error&&d.error.message)||'No data');
+      throw new Error((d.error&&d.error.message)||'No predictions returned');
 
+    // Parse raw predictions
     var rawPreds=d.predictions.map(function(p){
-      return{t:p.t.replace(' ','T'),v:p.v,type:p.type};
+      return{t:p.t.replace(' ','T'), v:p.v, type:p.type};
     });
 
-    // Apply subordinate offsets if needed
+    // Apply subordinate offsets (local time arithmetic — no UTC conversion)
     var allPreds=offsets?applyOffsets(rawPreds,offsets):rawPreds;
 
-    // Apply wind surge adjustment for bay-side Keys tides
-    if(isKeysStation&&meta&&meta.side==='bay'){
+    // Wind surge adjustment for bay/sound tides
+    if(meta&&(meta.side==='bay'||meta.side==='gulf')){
       allPreds=windSurgeAdjustment(allPreds,ST.windSpd,ST.windDir,meta.side);
     }
 
-    // Chart shows TODAY only
-    var todayStr=yr+'-'+mo+'-'+dy;
+    // Today's predictions for the chart
     var chartPreds=allPreds.filter(function(p){return p.t.startsWith(todayStr);});
     if(chartPreds.length<2) chartPreds=allPreds.slice(0,Math.min(4,allPreds.length));
 
-    // Current tide height via cosine interpolation
+    // Current height by cosine interpolation
     var nt=now.getTime();
     var curHt=parseFloat(allPreds[0].v);
     for(var i=0;i<allPreds.length-1;i++){
-      var t1=new Date(allPreds[i].t).getTime(),t2=new Date(allPreds[i+1].t).getTime();
+      var t1=new Date(allPreds[i].t).getTime();
+      var t2=new Date(allPreds[i+1].t).getTime();
       if(nt>=t1&&nt<=t2){
         var mu=(nt-t1)/(t2-t1);
         var mu2=(1-Math.cos(mu*Math.PI))/2;
@@ -1348,7 +1370,7 @@ async function fetchNOAATides(stationId){
       }
     }
 
-    // Next high and low (from all preds including tomorrow)
+    // Next high and low
     var nH=null,nL=null;
     allPreds.forEach(function(p){
       if(new Date(p.t)>now){
@@ -1357,42 +1379,48 @@ async function fetchNOAATides(stationId){
       }
     });
 
-    // Tide phase and flow
+    // Tide phase and flow rate
     ST.tidePhase=(nH&&(!nL||new Date(nH.t)<new Date(nL.t)))?'RISING':'FALLING';
     var lastEvt=null;
     allPreds.forEach(function(p){if(new Date(p.t)<=now)lastEvt=p;});
     if(lastEvt){
       var nextEvt=ST.tidePhase==='RISING'?nH:nL;
       if(nextEvt){
-        var fp=Math.sin(((now-new Date(lastEvt.t))/(new Date(nextEvt.t)-new Date(lastEvt.t)))*Math.PI);
-        ST.tideFlow=fp<.15?'SLACK':fp<.38?'SLOW':fp<.7?'MODERATE':'STRONG';
+        var span=new Date(nextEvt.t)-new Date(lastEvt.t);
+        var elapsed=now-new Date(lastEvt.t);
+        var fp=Math.sin((elapsed/span)*Math.PI);
+        ST.tideFlow=fp<.15?'SLACK':fp<.38?'SLOW':fp<.70?'MODERATE':'STRONG';
       }
     }
 
-    // Store state
+    // Commit to state
     ST.tideHt=curHt.toFixed(1);
     ST.nextHigh=nH?fmtTime(nH.t):'--';
     ST.nextLow=nL?fmtTime(nL.t):'--';
     ST.tidePreds=chartPreds;
 
-    // Update DOM
-    var tHtEl=document.getElementById('tHt'); if(tHtEl)tHtEl.textContent=ST.tideHt+' ft';
-    var tPhEl=document.getElementById('tPh'); if(tPhEl)tPhEl.textContent=ST.tidePhase;
-    var tNHEl=document.getElementById('tNH'); if(tNHEl)tNHEl.textContent=ST.nextHigh;
-    var tFlEl=document.getElementById('tFlow'); if(tFlEl)tFlEl.textContent=ST.tideFlow||'--';
-    var tNLEl=document.getElementById('tNL'); if(tNLEl)tNLEl.textContent=ST.nextLow;
-    var srcLabel=fetchId!==stationId?fetchId+'\u2192'+stationId+offsetDesc:'NOAA '+stationId+offsetDesc;
-    var alTEl=document.getElementById('alT');
-    if(alTEl)alTEl.textContent='TIDE: '+ST.tideHt+'ft '+ST.tidePhase+' \xb7 '+srcLabel;
+    // Update DOM labels
+    var el;
+    el=document.getElementById('tHt');  if(el)el.textContent=ST.tideHt+' ft';
+    el=document.getElementById('tPh');  if(el)el.textContent=ST.tidePhase;
+    el=document.getElementById('tNH'); if(el)el.textContent=ST.nextHigh;
+    el=document.getElementById('tNL');  if(el)el.textContent=ST.nextLow;
+    el=document.getElementById('tFlow');if(el)el.textContent=ST.tideFlow||'--';
+    var srcLabel=(fetchId!==stationId)?fetchId+'\u2192'+stationId+offsetDesc:'NOAA '+stationId+offsetDesc;
+    el=document.getElementById('alT');
+    if(el)el.textContent='TIDE: '+ST.tideHt+'ft '+ST.tidePhase+' \xb7 '+srcLabel;
     setSrc('srcTide','TIDE: '+srcLabel+' \u2713','ok');
-    ST.tidePreds=chartPreds;
+
+    // Draw chart
     drawTide(chartPreds,now);
     setTimeout(function(){drawTide(ST.tidePreds,new Date());},400);
     return true;
+
   }catch(e){
-    console.warn('NOAA tide:',e.message);
+    console.error('fetchNOAATides FAILED stationId='+stationId+' fetchId='+fetchId+' err='+e.message);
     setSrc('srcTide','TIDE: COMPUTED','warn');
-    tideFallback();return false;
+    tideFallback();
+    return false;
   }
 }
 
@@ -3092,7 +3120,7 @@ setInterval(()=>{document.getElementById('clk').textContent=new Date().toLocaleS
 // If different, forces a hard network reload — bypasses PWA cache,
 // browser cache, and service worker cache on all platforms.
 (function(){
-  var BUILD='20260506';
+  var BUILD='20260507';
   try{
     var last=localStorage.getItem('b2_build');
     if(last!==BUILD){
@@ -3113,6 +3141,15 @@ setInterval(()=>{document.getElementById('clk').textContent=new Date().toLocaleS
 })();
 
 window.addEventListener('DOMContentLoaded',()=>{
+  // Warn if running from file:// (CORS blocks all API calls)
+  if(window.location.protocol==='file:'){
+    var warn=document.createElement('div');
+    warn.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:#E53E3E;color:#fff;font-family:Share Tech Mono,monospace;font-size:11px;font-weight:700;padding:8px 12px;text-align:center';
+    warn.textContent='⚠ LOCAL FILE MODE — API data unavailable. Upload to ericbeckerbigsky.github.io/b2-flats/ for live data';
+    document.body.appendChild(warn);
+    // Push content down
+    document.body.style.marginTop='36px';
+  }
   applyTheme(getAutoTheme());
   initMap();detectRegion();updateDepth();renderSpots();renderAmenities();
   calcLunar();calcSolunar();calcPalolo();renderForecast();
