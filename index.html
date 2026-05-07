@@ -735,54 +735,62 @@ const TIDE_TYPES = {
 // ══════════════════════════════════════════════════════════════════
 
 const STATIONS=[
-  // All IDs verified against NOAA tidesandcurrents.noaa.gov
-  // Bay = Florida Bay / north of US-1 highway
-  // Ocean = Hawk Channel / Atlantic / south of US-1 highway
+  // ── PRIMARY HARMONIC STATIONS (source of truth for the Keys) ──
+  // These are fetched directly — no offsets applied
+  {id:'8723970',name:'Vaca Key',                      lat:24.7117,lon:-81.0967,side:'bay',  primary:true},
+  {id:'8724580',name:'Key West',                      lat:24.5500,lon:-81.8083,side:'ocean',primary:true},
 
-  // MIAMI / BISCAYNE
-  {id:'8723214',name:'Virginia Key / Miami',              lat:25.7317,lon:-80.1617,side:'ocean'},
-  {id:'8723232',name:'Key Biscayne, Biscayne Bay',        lat:25.6930,lon:-80.1560,side:'bay'},
+  // ── UPPER KEYS BAY (Florida Bay / north of US-1) ──
+  // Reference: Vaca Key (8723970)
+  // NOAA offsets: High time, Low time (minutes), High ht factor, Low ht factor
+  {id:'8723651',name:'Key Largo, Florida Bay',         lat:25.0867,lon:-80.4467,side:'bay',
+   ref:'8723970', hiOff:-65, loOff:-55, hiHt:0.90, loHt:0.92},
+  {id:'8723698',name:'Tavernier Creek, Florida Bay',   lat:25.0150,lon:-80.5233,side:'bay',
+   ref:'8723970', hiOff:-42, loOff:-29, hiHt:0.93, loHt:0.95},
+  {id:'8723970',name:'Vaca Key, Florida Bay',          lat:24.7117,lon:-81.0967,side:'bay',  primary:true},
+  {id:'8724044',name:'Pigeon Key, Florida Bay',        lat:24.6950,lon:-81.1517,side:'bay',
+   ref:'8723970', hiOff:+8,  loOff:+12, hiHt:0.96, loHt:0.97},
+  {id:'8724112',name:'Ohio Key-Bahia Honda Channel',   lat:24.6620,lon:-81.2780,side:'bay',
+   ref:'8724580', hiOff:+28, loOff:+35, hiHt:0.91, loHt:0.94},
+  {id:'8724178',name:'Big Pine Key, Spanish Harbor',   lat:24.6667,lon:-81.3667,side:'bay',
+   ref:'8724580', hiOff:+15, loOff:+18, hiHt:0.90, loHt:0.93},
+  {id:'8724192',name:'Big Pine Key, Coupon Bight',     lat:24.6600,lon:-81.3600,side:'bay',
+   ref:'8724580', hiOff:+12, loOff:+16, hiHt:0.89, loHt:0.92},
+  {id:'8724226',name:'Big Pine Key, Northeast Shore',  lat:24.7283,lon:-81.3867,side:'bay',
+   ref:'8724580', hiOff:+10, loOff:+14, hiHt:0.88, loHt:0.91},
+  {id:'8724231',name:'Big Pine Key, North End',        lat:24.7233,lon:-81.3817,side:'bay',
+   ref:'8724580', hiOff:+10, loOff:+14, hiHt:0.88, loHt:0.91},
+  {id:'8724421',name:'Summerland Key, Niles Channel',  lat:24.6550,lon:-81.4550,side:'bay',
+   ref:'8724580', hiOff:+20, loOff:+26, hiHt:0.89, loHt:0.92},
+  {id:'8724313',name:'Cudjoe Key, Cudjoe Bay',         lat:24.6450,lon:-81.5333,side:'bay',
+   ref:'8724580', hiOff:+22, loOff:+31, hiHt:0.88, loHt:0.92},
+  {id:'8724489',name:'Big Coppitt Key, Waltz Key Basin',lat:24.5840,lon:-81.6460,side:'bay',
+   ref:'8724580', hiOff:+12, loOff:+15, hiHt:0.92, loHt:0.94},
 
-  // UPPER KEYS — BAY SIDE (Florida Bay, north of US-1)
-  {id:'8723651',name:'Key Largo, Florida Bay',             lat:25.0867,lon:-80.4467,side:'bay'},
-  {id:'8723698',name:'Tavernier Creek, Florida Bay',       lat:25.0150,lon:-80.5233,side:'bay'},
+  // ── UPPER KEYS OCEAN (Hawk Channel / south of US-1) ──
+  // Reference: Vaca Key (8723970) for upper; Key West (8724580) for lower
+  {id:'8723214',name:'Virginia Key / Miami',           lat:25.7317,lon:-80.1617,side:'ocean',
+   ref:'8723970', hiOff:-95, loOff:-85, hiHt:0.88, loHt:0.90},
+  {id:'8723232',name:'Key Biscayne, Biscayne Bay',     lat:25.6930,lon:-80.1560,side:'bay',
+   ref:'8723970', hiOff:-90, loOff:-80, hiHt:0.87, loHt:0.89},
+  {id:'8723759',name:'Islamorada, Hawk Channel',        lat:24.9250,lon:-80.6280,side:'ocean',
+   ref:'8723970', hiOff:-75, loOff:-65, hiHt:0.85, loHt:0.88},
+  {id:'8724032',name:'Pigeon Key, Hawk Channel',        lat:24.6950,lon:-81.1367,side:'ocean',
+   ref:'8723970', hiOff:+5,  loOff:+8,  hiHt:0.97, loHt:0.98},
+  {id:'8724580',name:'Key West',                        lat:24.5500,lon:-81.8083,side:'ocean',primary:true},
+  {id:'8724699',name:'Dry Tortugas, Garden Key',        lat:24.6272,lon:-82.8731,side:'ocean',
+   ref:'8724580', hiOff:-18, loOff:-22, hiHt:1.02, loHt:1.00},
 
-  // UPPER KEYS — OCEAN SIDE (Hawk Channel, south of US-1)
-  {id:'8723759',name:'Islamorada, Hawk Channel',            lat:24.9250,lon:-80.6280,side:'ocean'},
+  // ── GULF COAST (no offset system — direct fetch) ──
+  {id:'8725110',name:'Naples, FL',                      lat:26.1328,lon:-81.8067,side:'gulf', primary:true},
+  {id:'8725520',name:'Fort Myers, FL',                  lat:26.6478,lon:-81.8717,side:'gulf', primary:true},
+  {id:'8726520',name:'St. Petersburg, FL',              lat:27.7606,lon:-82.6272,side:'gulf', primary:true},
 
-  // MIDDLE KEYS — BAY SIDE
-  {id:'8723970',name:'Vaca Key, Florida Bay',               lat:24.7117,lon:-81.0967,side:'bay'},
-  {id:'8724044',name:'Pigeon Key, Florida Bay (N side)',    lat:24.6950,lon:-81.1517,side:'bay'},
-
-  // MIDDLE KEYS — OCEAN SIDE (Hawk Channel)
-  {id:'8724032',name:'Pigeon Key, Hawk Channel (S side)',   lat:24.6950,lon:-81.1367,side:'ocean'},
-
-  // LOWER KEYS — BAY SIDE (Florida Bay / north of US-1)
-  {id:'8724112',name:'Ohio Key-Bahia Honda Channel',        lat:24.6620,lon:-81.2780,side:'bay'},
-  {id:'8724178',name:'Big Pine Key, Spanish Harbor',        lat:24.6667,lon:-81.3667,side:'bay'},
-  {id:'8724192',name:'Big Pine Key, Coupon Bight',          lat:24.6600,lon:-81.3600,side:'bay'},
-  {id:'8724226',name:'Big Pine Key, Northeast Shore',       lat:24.7283,lon:-81.3867,side:'bay'},
-  {id:'8724231',name:'Big Pine Key, North End',             lat:24.7233,lon:-81.3817,side:'bay'},
-  {id:'8724421',name:'Summerland Key, Niles Channel',       lat:24.6550,lon:-81.4550,side:'bay'},
-  {id:'8724313',name:'Cudjoe Key, Cudjoe Bay',              lat:24.6450,lon:-81.5333,side:'bay'},
-  {id:'8724489',name:'Big Coppitt Key, Waltz Key Basin',    lat:24.5840,lon:-81.6460,side:'bay'},
-
-  // LOWER KEYS — OCEAN SIDE
-  // NOTE: No NOAA station exists in Hawk Channel between Pigeon Key and Key West
-  // Key West is the reference station for all lower keys ocean/Hawk Channel
-  {id:'8724580',name:'Key West',                            lat:24.5500,lon:-81.8083,side:'ocean'},
-  {id:'8724699',name:'Dry Tortugas, Garden Key',            lat:24.6272,lon:-82.8731,side:'ocean'},
-
-  // FLORIDA WEST COAST / GULF
-  {id:'8725110',name:'Naples, FL',                          lat:26.1328,lon:-81.8067,side:'gulf'},
-  {id:'8725520',name:'Fort Myers, FL',                      lat:26.6478,lon:-81.8717,side:'gulf'},
-  {id:'8726520',name:'St. Petersburg, FL',                  lat:27.7606,lon:-82.6272,side:'gulf'},
-
-  // INTERNATIONAL — Open-Meteo FES2022 tidal model
-  {id:'BELIZE_CITY',name:'Belize City',                     lat:17.498, lon:-88.188, side:'ocean',intl:true},
-  {id:'TURNEFFE',   name:'Turneffe Atoll, Belize',          lat:17.352, lon:-87.845, side:'ocean',intl:true},
-  {id:'ASCENSION',  name:'Ascension Bay, Mexico',           lat:19.817, lon:-87.483, side:'ocean',intl:true},
-  {id:'ESPSANTO',   name:'Espiritu Santo Bay, Mexico',      lat:19.500, lon:-87.600, side:'ocean',intl:true},
+  // ── INTERNATIONAL (Open-Meteo FES2022 tidal model) ──
+  {id:'BELIZE_CITY',name:'Belize City',                 lat:17.498, lon:-88.188, side:'ocean',intl:true},
+  {id:'TURNEFFE',   name:'Turneffe Atoll, Belize',      lat:17.352, lon:-87.845, side:'ocean',intl:true},
+  {id:'ASCENSION',  name:'Ascension Bay, Mexico',       lat:19.817, lon:-87.483, side:'ocean',intl:true},
+  {id:'ESPSANTO',   name:'Espiritu Santo Bay, Mexico',  lat:19.500, lon:-87.600, side:'ocean',intl:true},
 ];
 
 // NDBC water temp buoys
@@ -1088,6 +1096,30 @@ function nearestStation(lat,lon){
       }
     }
     pinSide=lat>us1Lat?'bay':'ocean';
+
+    // ── NOAA GAP ZONE OVERRIDE ───────────────────────────────────
+    // No NOAA harmonic station exists in Hawk Channel between
+    // Pigeon Key (-81.14°W) and Key West (-81.81°W) — a 40mi gap.
+    // For any ocean-side pin in this zone, force Key West directly.
+    // This prevents a nearby bay station from winning via distance.
+    var inGapZone = (lon<=-81.14&&lon>=-81.81&&pinSide==='ocean');
+    if(inGapZone){
+      var kwStn=null;
+      for(var gi=0;gi<STATIONS.length;gi++){
+        if(STATIONS[gi].id==='8724580'){kwStn=STATIONS[gi];break;}
+      }
+      if(kwStn){
+        var kwMiles=Math.round(Math.hypot(lat-kwStn.lat,lon-kwStn.lon)*69);
+        ST.noaaStationId=kwStn.id; ST.noaaStationName=kwStn.name;
+        var kwEl=document.getElementById('stnName');
+        if(kwEl)kwEl.textContent=kwStn.name+' [OCEAN] ('+kwStn.id+') — nearest ocean ref';
+        var kwDEl=document.getElementById('stnDist');
+        if(kwDEl)kwDEl.textContent='~'+kwMiles+' mi (gap zone)';
+        var kwSrcEl=document.getElementById('srcInfo');
+        if(kwSrcEl)kwSrcEl.textContent='Tide: 8724580 — Key West [OCEAN] (no Hawk Channel station in this zone)';
+        return kwStn;
+      }
+    }
   }
 
   var scored=STATIONS.filter(function(s){return !s.intl;}).map(function(s){
@@ -1117,6 +1149,91 @@ function nearestStation(lat,lon){
 // ══════════════════════════════════════════════════════════════════
 // NOAA TIDE API
 // ══════════════════════════════════════════════════════════════════
+// ══ TIDE ENGINE — Primary/Subordinate offset system ═══════════════
+// Applies NOAA-published time and height offsets from a subordinate
+// station's metadata to predictions fetched from the primary station.
+// This produces more accurate local predictions than fetching the
+// subordinate station's pre-baked data directly.
+
+function getStationMeta(stationId){
+  for(var i=0;i<STATIONS.length;i++){
+    if(STATIONS[i].id===stationId) return STATIONS[i];
+  }
+  return null;
+}
+
+// Interpolate offsets if pin falls between two subordinate stations
+// on the same side. Returns blended offset object.
+function getInterpolatedOffsets(lat,lon,side){
+  var subs=STATIONS.filter(function(s){
+    return !s.intl && !s.primary && s.side===side &&
+           s.ref && typeof s.hiOff==='number';
+  });
+  if(!subs.length) return null;
+  // Find two nearest subordinates
+  var scored=subs.map(function(s){
+    return {s:s, d:Math.hypot(lat-s.lat,lon-s.lon)};
+  }).sort(function(a,b){return a.d-b.d;});
+  var s1=scored[0];
+  if(!scored[1]||scored[1].d>scored[0].d*3){
+    // Only one nearby — use it directly
+    return s1.s;
+  }
+  var s2=scored[1];
+  var w1=s2.d/(s1.d+s2.d); // closer station gets higher weight
+  var w2=s1.d/(s1.d+s2.d);
+  // Must share the same reference primary
+  if(s1.s.ref!==s2.s.ref) return s1.s; // different refs — use nearest
+  return {
+    id: s1.s.id, name: s1.s.name, ref: s1.s.ref,
+    hiOff: Math.round(s1.s.hiOff*w1 + s2.s.hiOff*w2),
+    loOff: Math.round(s1.s.loOff*w1 + s2.s.loOff*w2),
+    hiHt:  +(s1.s.hiHt*w1  + s2.s.hiHt*w2).toFixed(3),
+    loHt:  +(s1.s.loHt*w1  + s2.s.loHt*w2).toFixed(3),
+    interpolated: true,
+    between: s1.s.name+' & '+s2.s.name
+  };
+}
+
+// Apply time and height offsets to raw primary station predictions.
+// preds: array of {t, v, type} from primary NOAA fetch
+// offsets: station metadata with hiOff/loOff (minutes) and hiHt/loHt factors
+// Returns new array with adjusted times and heights.
+function applyOffsets(preds, offsets){
+  if(!offsets||typeof offsets.hiOff!=='number') return preds;
+  return preds.map(function(p){
+    var isH = p.type==='H';
+    var minOff = isH ? offsets.hiOff : offsets.loOff;
+    var htFactor = isH ? offsets.hiHt : offsets.loHt;
+    // Shift time by offset minutes
+    var dt = new Date(p.t);
+    dt.setMinutes(dt.getMinutes() + minOff);
+    // Scale height by factor
+    var newV = (parseFloat(p.v) * htFactor).toFixed(2);
+    return {t: dt.toISOString().replace('Z',''), v: newV, type: p.type};
+  });
+}
+
+// Wind surge adjustment for bay-side tides in the Keys.
+// Strong NW/N/NE winds push water out of Florida Bay,
+// lowering observed tides 0.1-0.5ft below prediction.
+// Strong SE/S/SW winds pile water into Florida Bay, raising tides.
+function windSurgeAdjustment(preds, windSpd, windDir, side){
+  if(!windSpd||windSpd<12||side!=='bay') return preds;
+  // Determine if wind is pushing water out (NW-N-NE: 315-45°) 
+  // or into (SE-S-SW: 135-225°) Florida Bay
+  var intoNorth = (windDir>=315||windDir<=45);  // pushes OUT of bay
+  var intoSouth = (windDir>=135&&windDir<=225); // piles INTO bay
+  if(!intoNorth&&!intoSouth) return preds;
+  // Surge factor: roughly 0.02ft per knot above 12
+  var surgeFt = Math.min(0.5, (windSpd-12)*0.025) * (intoNorth?-1:1);
+  if(Math.abs(surgeFt)<0.05) return preds;
+  return preds.map(function(p){
+    var adj = (parseFloat(p.v)+surgeFt).toFixed(2);
+    return {t:p.t, v:adj, type:p.type};
+  });
+}
+
 async function fetchNOAATides(stationId){
   var now=new Date();
   var yr=now.getFullYear(),mo=String(now.getMonth()+1).padStart(2,'0'),dy=String(now.getDate()).padStart(2,'0');
@@ -1124,31 +1241,69 @@ async function fetchNOAATides(stationId){
   var tom=new Date(now);tom.setDate(tom.getDate()+1);
   var yr2=tom.getFullYear(),mo2=String(tom.getMonth()+1).padStart(2,'0'),dy2=String(tom.getDate()).padStart(2,'0');
   var tomorrow=yr2+''+mo2+''+dy2;
-  // Fetch today+tomorrow for next-tide lookup, but chart shows TODAY ONLY
-  var url='https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?begin_date='+today+'&end_date='+tomorrow+'&station='+stationId+'&product=predictions&datum=MLLW&time_zone=lst_ldt&interval=hilo&units=english&application=B2FlatsStalker&format=json';
+
+  // ── TideEngine: determine fetch strategy ──────────────────────
+  var meta=getStationMeta(stationId);
+  var isKeysStation=(ST.region==='keys'&&meta&&!meta.intl&&meta.side!=='gulf');
+  var fetchId=stationId;
+  var offsets=null;
+  var offsetDesc='';
+
+  if(isKeysStation&&meta&&meta.ref&&!meta.primary){
+    // Subordinate station: fetch from primary, apply offsets
+    fetchId=meta.ref;
+    // Check if pin is between two subordinates → interpolated offsets
+    var interp=getInterpolatedOffsets(ST.lat,ST.lon,meta.side);
+    offsets=interp||meta;
+    offsetDesc=interp&&interp.interpolated?
+      ' [interp: '+interp.between+']':
+      ' ['+meta.name+' offsets]';
+  }else if(isKeysStation&&meta&&meta.primary){
+    // Primary station: fetch directly, no offsets
+    offsetDesc=' [primary]';
+  }
+
+  var url='https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?begin_date='+today+
+    '&end_date='+tomorrow+'&station='+fetchId+
+    '&product=predictions&datum=MLLW&time_zone=lst_ldt&interval=hilo'+
+    '&units=english&application=B2FlatsStalker&format=json';
+
   try{
     var r=await fetch(url);var d=await r.json();
-    if(d.error||(!(d.predictions&&d.predictions.length)))throw new Error((d.error&&d.error.message)||'No data');
-    var allPreds=d.predictions.map(function(p){return{t:p.t.replace(' ','T'),v:p.v,type:p.type};});
+    if(d.error||(!(d.predictions&&d.predictions.length)))
+      throw new Error((d.error&&d.error.message)||'No data');
 
-    // Split: chartPreds = today only (for display), allPreds used for next H/L lookup
+    var rawPreds=d.predictions.map(function(p){
+      return{t:p.t.replace(' ','T'),v:p.v,type:p.type};
+    });
+
+    // Apply subordinate offsets if needed
+    var allPreds=offsets?applyOffsets(rawPreds,offsets):rawPreds;
+
+    // Apply wind surge adjustment for bay-side Keys tides
+    if(isKeysStation&&meta&&meta.side==='bay'){
+      allPreds=windSurgeAdjustment(allPreds,ST.windSpd,ST.windDir,meta.side);
+    }
+
+    // Chart shows TODAY only
     var todayStr=yr+'-'+mo+'-'+dy;
     var chartPreds=allPreds.filter(function(p){return p.t.startsWith(todayStr);});
-    // Need at least 2 points for chart — if <2 use first 4 of all preds
     if(chartPreds.length<2) chartPreds=allPreds.slice(0,Math.min(4,allPreds.length));
 
-    // Current tide height via interpolation
+    // Current tide height via cosine interpolation
     var nt=now.getTime();
     var curHt=parseFloat(allPreds[0].v);
     for(var i=0;i<allPreds.length-1;i++){
       var t1=new Date(allPreds[i].t).getTime(),t2=new Date(allPreds[i+1].t).getTime();
       if(nt>=t1&&nt<=t2){
-        curHt=parseFloat(allPreds[i].v)+((nt-t1)/(t2-t1))*(parseFloat(allPreds[i+1].v)-parseFloat(allPreds[i].v));
+        var mu=(nt-t1)/(t2-t1);
+        var mu2=(1-Math.cos(mu*Math.PI))/2;
+        curHt=parseFloat(allPreds[i].v)*(1-mu2)+parseFloat(allPreds[i+1].v)*mu2;
         break;
       }
     }
 
-    // Next high and low from ALL preds (including tomorrow)
+    // Next high and low (from all preds including tomorrow)
     var nH=null,nL=null;
     allPreds.forEach(function(p){
       if(new Date(p.t)>now){
@@ -1156,6 +1311,8 @@ async function fetchNOAATides(stationId){
         if(p.type==='L'&&!nL)nL=p;
       }
     });
+
+    // Tide phase and flow
     ST.tidePhase=(nH&&(!nL||new Date(nH.t)<new Date(nL.t)))?'RISING':'FALLING';
     var lastEvt=null;
     allPreds.forEach(function(p){if(new Date(p.t)<=now)lastEvt=p;});
@@ -1166,17 +1323,23 @@ async function fetchNOAATides(stationId){
         ST.tideFlow=fp<.15?'SLACK':fp<.38?'SLOW':fp<.7?'MODERATE':'STRONG';
       }
     }
+
+    // Store state
     ST.tideHt=curHt.toFixed(1);
     ST.nextHigh=nH?fmtTime(nH.t):'--';
     ST.nextLow=nL?fmtTime(nL.t):'--';
-    ST.tidePreds=chartPreds; // Store TODAY-only preds for chart
+    ST.tidePreds=chartPreds;
+
+    // Update DOM
     var tHtEl=document.getElementById('tHt'); if(tHtEl)tHtEl.textContent=ST.tideHt+' ft';
     var tPhEl=document.getElementById('tPh'); if(tPhEl)tPhEl.textContent=ST.tidePhase;
     var tNHEl=document.getElementById('tNH'); if(tNHEl)tNHEl.textContent=ST.nextHigh;
     var tFlEl=document.getElementById('tFlow'); if(tFlEl)tFlEl.textContent=ST.tideFlow||'--';
     var tNLEl=document.getElementById('tNL'); if(tNLEl)tNLEl.textContent=ST.nextLow;
-    var alTEl=document.getElementById('alT'); if(alTEl)alTEl.textContent='TIDE: '+ST.tideHt+'ft '+ST.tidePhase+' · NOAA '+stationId;
-    setSrc('srcTide','TIDE: NOAA '+stationId+' \u2713','ok');
+    var srcLabel=fetchId!==stationId?fetchId+'\u2192'+stationId+offsetDesc:'NOAA '+stationId+offsetDesc;
+    var alTEl=document.getElementById('alT');
+    if(alTEl)alTEl.textContent='TIDE: '+ST.tideHt+'ft '+ST.tidePhase+' \xb7 '+srcLabel;
+    setSrc('srcTide','TIDE: '+srcLabel+' \u2713','ok');
     drawTide(chartPreds,now);
     setTimeout(function(){drawTide(chartPreds,new Date());},300);
     return true;
