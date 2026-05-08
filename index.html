@@ -841,11 +841,8 @@ const BUOYS=[
 // ══════════════════════════════════════════════════════════════════
 const AMENITIES={
   keys:[
-    // ── SEA TOW (always shown first, sorted by distance) ──────────────
-    {type:'seatow',name:'Sea Tow Key Largo',         lat:25.086,lon:-80.445,detail:'Upper Keys: Ocean Reef to Tavernier · 24/7 · Tap to call',phone:'1-800-473-2869',url:'tel:18004732869'},
-    {type:'seatow',name:'Sea Tow Islamorada',         lat:24.923,lon:-80.644,detail:'Mid-Upper Keys · 24/7 · Tap to call',phone:'1-800-473-2869',url:'tel:18004732869'},
-    {type:'seatow',name:'Sea Tow Marathon',           lat:24.707,lon:-81.100,detail:'Middle Keys · 24/7 · Tap to call',phone:'1-800-473-2869',url:'tel:18004732869'},
-    {type:'seatow',name:'Sea Tow Key West',           lat:24.551,lon:-81.780,detail:'Lower Keys & Key West · 24/7 · Tap to call',phone:'1-800-473-2869',url:'tel:18004732869'},
+    // ── SEA TOW (always pinned at top) ──────────────────────────────────
+    {type:'seatow',name:'Sea Tow Florida Keys',       lat:24.707,lon:-81.100,detail:'Florida Keys · 24/7 Emergency Towing · Tap to call',phone:'1-800-473-2869',url:'tel:18004732869'},
     // ── BOAT RAMPS ────────────────────────────────────────────────────
     {type:'ramp',name:'Founders Park Ramp — Islamorada',     lat:24.940,lon:-80.634,detail:'Public 2-lane, lights, parking · MM 87 bayside',url:'https://www.monroecountyfl.gov/facilities/facility/details/Founders-Park-88'},
     {type:'ramp',name:'MM 79.5 State Ramp — Lower Matecumbe',lat:24.856,lon:-80.783,detail:'Free 2-lane state ramp · MM 79.5',url:'https://www.google.com/maps/search/MM+79.5+boat+ramp+Florida+Keys'},
@@ -873,9 +870,8 @@ const AMENITIES={
     {type:'bar',name:'Looe Key Reef Resort & Tiki Bar',       lat:24.558,lon:-81.407,detail:'MM 27.5 bayside · dive resort tiki · Looe Key access',url:'https://www.looekey.com/tiki-bar/'},
   ],
   pine:[
-    // ── SEA TOW ───────────────────────────────────────────────────────
-    {type:'seatow',name:'Sea Tow Fort Myers / Pine Island', lat:26.648,lon:-82.175,detail:'Pine Island Sound · Charlotte Harbor · Estero Bay · 24/7 · Tap to call',phone:'1-800-473-2869',url:'tel:18004732869'},
-    {type:'seatow',name:'Sea Tow Cape Coral / Sanibel',    lat:26.509,lon:-82.002,detail:'San Carlos Bay · Caloosahatchee · 24/7 · Tap to call',phone:'1-800-473-2869',url:'tel:18004732869'},
+    // ── SEA TOW (always pinned at top) ──────────────────────────────────
+    {type:'seatow',name:'Sea Tow Southwest Florida',  lat:26.648,lon:-82.175,detail:'Pine Island Sound · Charlotte Harbor · Sanibel · 24/7 Emergency Towing · Tap to call',phone:'1-800-473-2869',url:'tel:18004732869'},
     // ── BOAT RAMPS ────────────────────────────────────────────────────
     {type:'ramp',name:'Matlacha Ramp — Pine Island Rd',    lat:26.630,lon:-82.079,detail:'Free county 2-lane · Pine Island Sound access',url:'https://www.google.com/maps/search/Matlacha+boat+ramp+Pine+Island+Florida'},
     {type:'ramp',name:'Punta Rassa Ramp — Cape Coral',    lat:26.509,lon:-82.015,detail:'3-lane county ramp · San Carlos Bay · near Sanibel ferry',url:'https://www.google.com/maps/search/Punta+Rassa+boat+ramp+Cape+Coral'},
