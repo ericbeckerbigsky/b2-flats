@@ -3137,7 +3137,7 @@ setInterval(()=>{document.getElementById('clk').textContent=new Date().toLocaleS
 // If different, forces a hard network reload — bypasses PWA cache,
 // browser cache, and service worker cache on all platforms.
 (function(){
-  var BUILD='20260507';
+  var BUILD='20260508';
   try{
     var last=localStorage.getItem('b2_build');
     if(last!==BUILD){
@@ -3157,7 +3157,34 @@ setInterval(()=>{document.getElementById('clk').textContent=new Date().toLocaleS
   }
 })();
 
-window.addEventListener('DOMContentLoaded',()=>{
+
+  // ── SERVICE WORKER: Network-first cache strategy ──────────────────
+  // Forces the PWA home screen icon to always fetch fresh HTML from GitHub
+  // instead of serving the cached snapshot.
+  if('serviceWorker' in navigator){
+    // Register an inline service worker via blob URL
+    var swCode=[
+      'const BUILD="20260508";',
+      'self.addEventListener("install",e=>{self.skipWaiting();});',
+      'self.addEventListener("activate",e=>{',
+      '  e.waitUntil(caches.keys().then(ks=>Promise.all(ks.map(k=>caches.delete(k)))));',
+      '  self.clients.claim();',
+      '});',
+      'self.addEventListener("fetch",e=>{',
+      '  if(e.request.mode==="navigate"){',
+      '    e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));',
+      '  }',
+      '});'
+    ].join("\n");
+    var blob=new Blob([swCode],{type:"application/javascript"});
+    var swUrl=URL.createObjectURL(blob);
+    navigator.serviceWorker.register(swUrl,{scope:"/"})
+      .then(function(reg){
+        // Force update check on every page load
+        reg.update();
+      }).catch(function(){});
+  }
+  window.addEventListener('DOMContentLoaded',()=>{
   // Warn if running from file:// (CORS blocks all API calls)
   if(window.location.protocol==='file:'){
     var warn=document.createElement('div');
