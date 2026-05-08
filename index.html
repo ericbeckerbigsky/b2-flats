@@ -841,59 +841,73 @@ const BUOYS=[
 // ══════════════════════════════════════════════════════════════════
 const AMENITIES={
   keys:[
-    {type:'ramp',name:'Founders Park Ramp — Islamorada',lat:24.940,lon:-80.634,detail:'Public 2-lane ramp, parking, lights',url:'https://www.monroecountyfl.gov/facilities/facility/details/Founders-Park-88'},
-    {type:'ramp',name:'MM 79.5 State Ramp — Lower Matecumbe',lat:24.856,lon:-80.783,detail:'Free state ramp, 2 lanes',url:'https://www.google.com/maps/search/MM+79.5+boat+ramp+Florida+Keys'},
-    {type:'ramp',name:'Marathon Boat Ramp — 33rd St',lat:24.723,lon:-81.042,detail:'4-lane public ramp, lights, pump-out',url:'https://www.google.com/maps/search/Marathon+33rd+Street+boat+ramp+Florida+Keys'},
-    {type:'ramp',name:'Boca Chica Ramp — Stock Island',lat:24.574,lon:-81.714,detail:'Public 2-lane, off US-1',url:'https://www.google.com/maps/search/Boca+Chica+boat+ramp+Stock+Island'},
-    {type:'fuel',name:'Bud N Marys Marina — Islamorada',lat:24.923,lon:-80.644,detail:'Rec-90, diesel, live bait · Main guide hub',url:'https://www.budnmarys.com/'},
-    {type:'fuel',name:'Whale Harbor Marina — Islamorada',lat:24.906,lon:-80.712,detail:'Rec-90, gas, diesel, tackle, bait',url:'https://www.whaleharbormarina.com/'},
-    {type:'fuel',name:'Marathon Marina — Boot Key Harbor',lat:24.707,lon:-81.100,detail:'Rec-90, diesel, pump-out, live bait',url:'https://www.marathonmarina.com/'},
-    {type:'fuel',name:'Stock Island Marina Village',lat:24.563,lon:-81.737,detail:'Full-service, rec-90, diesel, repairs',url:'https://www.stockislandmarinavillage.com/'},
-    {type:'bar', name:'Lorelei Restaurant & Cabana Bar',lat:24.912,lon:-80.721,detail:'Dockage, tiki bar, sunset views',url:'https://www.loreleifloridakeys.com/'},
-    {type:'bar', name:"Robbie's of Islamorada",lat:24.878,lon:-80.742,detail:'Waterfront tiki, tarpon feeding, dock',url:'https://www.robbies.com/'},
-    {type:'bar', name:'Bud N Marys Dockside Bar',lat:24.923,lon:-80.644,detail:'Guide hangout, live music, full menu',url:'https://www.budnmarys.com/'},
-    {type:'bar', name:'Kaiyo Grill & Sushi — Islamorada',lat:24.929,lon:-80.625,detail:'Oceanfront, sushi, craft cocktails',url:'https://www.kaiyoislamorada.com/'},
-    {type:'bar', name:'Castaway Waterfront — Marathon',lat:24.718,lon:-81.069,detail:'Marathon waterfront, full bar & grill',url:'https://castawaymarathon.com/'},
-    // Big Pine / No Name / Lower Keys
-    {type:'bar', name:'No Name Pub — Big Pine Key',lat:24.706,lon:-81.356,detail:'Most remote bar in the Keys, cash only, no phone, dark & cold',url:'https://www.google.com/maps/search/No+Name+Pub+Big+Pine+Key+Florida'},
-    {type:'bar', name:'Square Grouper Bar — Cudjoe Key',lat:24.648,lon:-81.513,detail:'On MM 22.5 bayside, low key local bar, fresh fish, cold beer',url:'https://www.google.com/maps/search/Square+Grouper+Cudjoe+Key+Florida'},
-    {type:'bar', name:'Mangrove Mamas — Sugarloaf Key',lat:24.645,lon:-81.558,detail:'MM 20 oceanside, legendary breakfast & lunch, cash preferred',url:'https://www.google.com/maps/search/Mangrove+Mamas+Sugarloaf+Key'},
-    {type:'bar', name:'The Broken Prop — Big Pine Key',lat:24.702,lon:-81.347,detail:'MM 30.5 bayside, guide hangout, great burgers, cold beer, casual',url:'https://www.google.com/maps/search/Broken+Prop+Big+Pine+Key+Florida'},
-    {type:'bar', name:'Geiger Key Marina & Smokehouse',lat:24.571,lon:-81.697,detail:'Hidden gem past Boca Chica, tiki bar, smoked fish, dockage',url:'https://geigerkeymarina.com/'},
-    {type:'bar', name:'Looe Key Reef Resort & Tiki Bar',lat:24.558,lon:-81.407,detail:'MM 27.5 bayside, dive resort tiki, Looe Key reef access',url:'https://www.looekey.com/tiki-bar/'},
-    {type:'fuel',name:'Cudjoe Key Gas & Marina',lat:24.643,lon:-81.528,detail:'Rec-90 & diesel, Cudjoe Bay, nearest fuel lower Keys bayside',url:'https://www.google.com/maps/search/Cudjoe+Key+marina+fuel+Florida'},
-    {type:'fuel',name:'Sugarloaf Marina',lat:24.641,lon:-81.563,detail:'Rec-90, ice, bait, Sugarloaf area',url:'https://www.google.com/maps/search/Sugarloaf+Marina+Florida+Keys'},
-    {type:'ramp',name:'Big Pine Key Boat Ramp — Bogie Channel',lat:24.673,lon:-81.359,detail:'Public county ramp, Big Pine Bay access, lights',url:'https://www.google.com/maps/search/Big+Pine+Key+boat+ramp+Bogie+Channel'},
-    {type:'ramp',name:'Sugarloaf Key Ramp — MM 17',lat:24.641,lon:-81.560,detail:'Public ramp, Sugarloaf Sound access, lower Keys',url:'https://www.google.com/maps/search/Sugarloaf+Key+boat+ramp+Florida'},
-    // Sea Tow
-    {type:'seatow',name:'Sea Tow Key Largo',lat:25.086,lon:-80.445,detail:'Upper Keys: Ocean Reef to Tavernier · 24/7',phone:'800-473-2869',url:'https://seatow.com/key-largo/'},
-    {type:'seatow',name:'Sea Tow Key West',lat:24.551,lon:-81.780,detail:'Lower Keys & Key West · 24/7',phone:'800-473-2869',url:'https://seatow.com/key-west/'},
+    // ── SEA TOW (always shown first, sorted by distance) ──────────────
+    {type:'seatow',name:'Sea Tow Key Largo',         lat:25.086,lon:-80.445,detail:'Upper Keys: Ocean Reef to Tavernier · 24/7 · Tap to call',phone:'1-800-473-2869',url:'tel:18004732869'},
+    {type:'seatow',name:'Sea Tow Islamorada',         lat:24.923,lon:-80.644,detail:'Mid-Upper Keys · 24/7 · Tap to call',phone:'1-800-473-2869',url:'tel:18004732869'},
+    {type:'seatow',name:'Sea Tow Marathon',           lat:24.707,lon:-81.100,detail:'Middle Keys · 24/7 · Tap to call',phone:'1-800-473-2869',url:'tel:18004732869'},
+    {type:'seatow',name:'Sea Tow Key West',           lat:24.551,lon:-81.780,detail:'Lower Keys & Key West · 24/7 · Tap to call',phone:'1-800-473-2869',url:'tel:18004732869'},
+    // ── BOAT RAMPS ────────────────────────────────────────────────────
+    {type:'ramp',name:'Founders Park Ramp — Islamorada',     lat:24.940,lon:-80.634,detail:'Public 2-lane, lights, parking · MM 87 bayside',url:'https://www.monroecountyfl.gov/facilities/facility/details/Founders-Park-88'},
+    {type:'ramp',name:'MM 79.5 State Ramp — Lower Matecumbe',lat:24.856,lon:-80.783,detail:'Free 2-lane state ramp · MM 79.5',url:'https://www.google.com/maps/search/MM+79.5+boat+ramp+Florida+Keys'},
+    {type:'ramp',name:'Marathon Ramp — 33rd St',              lat:24.723,lon:-81.042,detail:'4-lane public, lights, pump-out · Boot Key access',url:'https://www.google.com/maps/search/Marathon+33rd+Street+boat+ramp+Florida+Keys'},
+    {type:'ramp',name:'Big Pine Key Ramp — Bogie Channel',    lat:24.673,lon:-81.359,detail:'Public county 2-lane, bay access, lights',url:'https://www.google.com/maps/search/Big+Pine+Key+boat+ramp+Bogie+Channel'},
+    {type:'ramp',name:'Sugarloaf Key Ramp — MM 17',           lat:24.641,lon:-81.560,detail:'Public ramp, Sugarloaf Sound, lower Keys',url:'https://www.google.com/maps/search/Sugarloaf+Key+boat+ramp+Florida'},
+    {type:'ramp',name:'Boca Chica Ramp — Stock Island',       lat:24.574,lon:-81.714,detail:'Public 2-lane, off US-1',url:'https://www.google.com/maps/search/Boca+Chica+boat+ramp+Stock+Island'},
+    // ── FUEL DOCKS ────────────────────────────────────────────────────
+    {type:'fuel',name:'Bud N Marys Marina — Islamorada',      lat:24.923,lon:-80.644,detail:'Rec-90, diesel, live bait · Main guide hub MM 79.8',url:'https://www.budnmarys.com/'},
+    {type:'fuel',name:'Whale Harbor Marina — Islamorada',     lat:24.906,lon:-80.712,detail:'Rec-90, diesel, tackle, live bait · MM 83.5',url:'https://www.whaleharbormarina.com/'},
+    {type:'fuel',name:'Marathon Marina — Boot Key Harbor',    lat:24.707,lon:-81.100,detail:'Rec-90, diesel, pump-out, live bait · Boot Key',url:'https://www.marathonmarina.com/'},
+    {type:'fuel',name:'Cudjoe Key Gas & Marina',              lat:24.643,lon:-81.528,detail:'Rec-90 & diesel · Cudjoe Bay · closest lower Keys bay fuel',url:'https://www.google.com/maps/search/Cudjoe+Key+marina+fuel+Florida'},
+    {type:'fuel',name:'Sugarloaf Marina',                     lat:24.641,lon:-81.563,detail:'Rec-90, ice, bait · Sugarloaf Sound · MM 17',url:'https://www.google.com/maps/search/Sugarloaf+Marina+Florida+Keys'},
+    {type:'fuel',name:'Stock Island Marina Village',          lat:24.563,lon:-81.737,detail:'Full-service, rec-90, diesel, repairs · Key West approach',url:'https://www.stockislandmarinavillage.com/'},
+    // ── RESTAURANTS / BARS accessible by water ────────────────────────
+    {type:'bar',name:'Lorelei Restaurant & Cabana Bar',       lat:24.912,lon:-80.721,detail:'Dockage, full menu, sunset tiki bar · Islamorada MM 82',url:'https://www.loreleifloridakeys.com/'},
+    {type:'bar',name:"Robbie's of Islamorada",               lat:24.878,lon:-80.742,detail:'Waterfront tiki, tarpon feeding dock, food · MM 77.5',url:'https://www.robbies.com/'},
+    {type:'bar',name:'Kaiyo Grill & Sushi — Islamorada',     lat:24.929,lon:-80.625,detail:'Oceanfront, sushi & craft cocktails · MM 81.8',url:'https://www.kaiyoislamorada.com/'},
+    {type:'bar',name:'Castaway Waterfront — Marathon',        lat:24.718,lon:-81.069,detail:'Marathon waterfront, full bar & grill, dockage · MM 48',url:'https://castawaymarathon.com/'},
+    {type:'bar',name:'No Name Pub — Big Pine Key',            lat:24.706,lon:-81.356,detail:'Most remote bar in Keys · cash only · no sign · dark & cold',url:'https://www.google.com/maps/search/No+Name+Pub+Big+Pine+Key+Florida'},
+    {type:'bar',name:'The Broken Prop — Big Pine Key',        lat:24.702,lon:-81.347,detail:'MM 30.5 bayside · guide hangout · burgers · cold beer',url:'https://www.google.com/maps/search/Broken+Prop+Big+Pine+Key+Florida'},
+    {type:'bar',name:'Square Grouper Bar — Cudjoe Key',       lat:24.648,lon:-81.513,detail:'MM 22.5 bayside · low-key local · fresh fish · cold beer',url:'https://www.google.com/maps/search/Square+Grouper+Cudjoe+Key+Florida'},
+    {type:'bar',name:'Mangrove Mamas — Sugarloaf Key',        lat:24.645,lon:-81.558,detail:'MM 20 · legendary breakfast & lunch · cash preferred',url:'https://www.google.com/maps/search/Mangrove+Mamas+Sugarloaf+Key'},
+    {type:'bar',name:'Geiger Key Marina & Smokehouse',        lat:24.571,lon:-81.697,detail:'Past Boca Chica · tiki bar · smoked fish · dockage · hidden gem',url:'https://geigerkeymarina.com/'},
+    {type:'bar',name:'Looe Key Reef Resort & Tiki Bar',       lat:24.558,lon:-81.407,detail:'MM 27.5 bayside · dive resort tiki · Looe Key access',url:'https://www.looekey.com/tiki-bar/'},
   ],
   pine:[
-    {type:'ramp',name:'Matlacha Ramp — Pine Island Road',lat:26.630,lon:-82.079,detail:'Free county ramp, 2 lanes',url:'https://www.google.com/maps/search/Matlacha+boat+ramp+Pine+Island+Florida'},
-    {type:'ramp',name:'Punta Rassa Ramp — Cape Coral',lat:26.509,lon:-82.015,detail:'3-lane ramp, near Sanibel ferry',url:'https://www.google.com/maps/search/Punta+Rassa+boat+ramp+Cape+Coral'},
-    {type:'ramp',name:'Cayo Costa State Park Ramp',lat:26.675,lon:-82.268,detail:'Primitive ramp, boat-in access only',url:'https://www.floridastateparks.org/parks-and-trails/cayo-costa-state-park'},
-    {type:'ramp',name:'Burnt Store Marina Ramp',lat:26.759,lon:-82.062,detail:'Full-service marina, covered storage',url:'https://www.burntstoremarina.com/'},
-    {type:'fuel',name:'Pineland Marina — Pine Island',lat:26.650,lon:-82.175,detail:'Rec-90, diesel, ice, bait',url:'https://www.google.com/maps/search/Pineland+Marina+Pine+Island+Florida'},
-    {type:'fuel',name:'South Seas Resort Marina',lat:26.597,lon:-82.165,detail:'Rec-90, diesel, full service',url:'https://southseas.com/marina/'},
-    {type:'fuel',name:'Burnt Store Marina Fuel Dock',lat:26.759,lon:-82.062,detail:'Rec-90, diesel, pump-out',url:'https://www.burntstoremarina.com/'},
-    {type:'bar', name:'Tarpon Lodge — Pineland',lat:26.643,lon:-82.167,detail:'Historic waterfront inn, full bar',url:'https://www.tarponlodge.com/'},
-    {type:'bar', name:'Cabbage Key Bar & Restaurant',lat:26.716,lon:-82.232,detail:'Famous dollar-bill bar, boat-in only',url:'https://cabbagekey.com/'},
-    {type:'bar', name:'Lazy Flamingo — Matlacha',lat:26.629,lon:-82.079,detail:'Waterfront seafood bar, local favorite',url:'https://www.lazyflamingo.com/'},
-    {type:'bar', name:'Smugglers Restaurant — Pine Island',lat:26.650,lon:-82.145,detail:'Waterfront, full bar, fresh seafood',url:'https://www.google.com/maps/search/Smugglers+Restaurant+Pine+Island+Florida'},
+    // ── SEA TOW ───────────────────────────────────────────────────────
+    {type:'seatow',name:'Sea Tow Fort Myers / Pine Island', lat:26.648,lon:-82.175,detail:'Pine Island Sound · Charlotte Harbor · Estero Bay · 24/7 · Tap to call',phone:'1-800-473-2869',url:'tel:18004732869'},
+    {type:'seatow',name:'Sea Tow Cape Coral / Sanibel',    lat:26.509,lon:-82.002,detail:'San Carlos Bay · Caloosahatchee · 24/7 · Tap to call',phone:'1-800-473-2869',url:'tel:18004732869'},
+    // ── BOAT RAMPS ────────────────────────────────────────────────────
+    {type:'ramp',name:'Matlacha Ramp — Pine Island Rd',    lat:26.630,lon:-82.079,detail:'Free county 2-lane · Pine Island Sound access',url:'https://www.google.com/maps/search/Matlacha+boat+ramp+Pine+Island+Florida'},
+    {type:'ramp',name:'Punta Rassa Ramp — Cape Coral',    lat:26.509,lon:-82.015,detail:'3-lane county ramp · San Carlos Bay · near Sanibel ferry',url:'https://www.google.com/maps/search/Punta+Rassa+boat+ramp+Cape+Coral'},
+    {type:'ramp',name:'Pineland Marina Ramp',              lat:26.650,lon:-82.175,detail:'Paid ramp · deep water · Charlotte Harbor access',url:'https://www.google.com/maps/search/Pineland+Marina+Pine+Island+Florida'},
+    {type:'ramp',name:'Cayo Costa State Park Ramp',        lat:26.675,lon:-82.268,detail:'Primitive ramp · boat-in access only · permit required',url:'https://www.floridastateparks.org/parks-and-trails/cayo-costa-state-park'},
+    {type:'ramp',name:'Burnt Store Marina Ramp',           lat:26.759,lon:-82.062,detail:'Full-service marina ramp · covered storage',url:'https://www.burntstoremarina.com/'},
+    // ── FUEL DOCKS ────────────────────────────────────────────────────
+    {type:'fuel',name:'Pineland Marina Fuel — Pine Island',lat:26.650,lon:-82.175,detail:'Rec-90, diesel, ice, live bait · Charlotte Harbor',url:'https://www.google.com/maps/search/Pineland+Marina+Pine+Island+Florida'},
+    {type:'fuel',name:'South Seas Resort Marina — Captiva',lat:26.597,lon:-82.165,detail:'Rec-90, diesel, full service · Captiva Island',url:'https://southseas.com/marina/'},
+    {type:'fuel',name:'Burnt Store Marina Fuel Dock',      lat:26.759,lon:-82.062,detail:'Rec-90, diesel, pump-out · Charlotte Harbor north',url:'https://www.burntstoremarina.com/'},
+    {type:'fuel',name:'Four Winds Marina — Cape Coral',    lat:26.621,lon:-81.990,detail:'Rec-90, diesel · Caloosahatchee access',url:'https://www.google.com/maps/search/Four+Winds+Marina+Cape+Coral+Florida'},
+    // ── RESTAURANTS / BARS accessible by water ────────────────────────
+    {type:'bar',name:'Tarpon Lodge Restaurant — Pineland', lat:26.643,lon:-82.167,detail:'Historic waterfront, full bar & dining · Pine Island Sound',url:'https://www.tarponlodge.com/'},
+    {type:'bar',name:'Cabbage Key Bar & Restaurant',       lat:26.716,lon:-82.232,detail:'Famous dollar-bill tiki bar · boat-in only · ICW MM 60',url:'https://cabbagekey.com/'},
+    {type:'bar',name:'Lazy Flamingo — Matlacha',           lat:26.629,lon:-82.079,detail:'Waterfront seafood bar · local favorite · good grouper',url:'https://www.lazyflamingo.com/'},
+    {type:'bar',name:'Smugglers Restaurant — Pine Island', lat:26.650,lon:-82.145,detail:'Waterfront dining, full bar, fresh local seafood',url:'https://www.google.com/maps/search/Smugglers+Restaurant+Pine+Island+Florida'},
+    {type:'bar',name:'Rumrunners — Cape Coral',            lat:26.623,lon:-81.991,detail:'Caloosahatchee waterfront, full bar, live music, dockage',url:'https://www.google.com/maps/search/Rumrunners+Cape+Coral+Florida'},
   ],
   belize:[
-    {type:'ramp',name:'San Pedro Town Ramp',lat:17.918,lon:-87.963,detail:'Main public ramp, Ambergris Caye',url:'https://www.google.com/maps/search/San+Pedro+boat+ramp+Belize'},
-    {type:'fuel',name:'Banana Beach Marina Fuel',lat:17.912,lon:-87.964,detail:'Fuel dock, ice, guide services',url:'https://www.bananabeachbelize.com/'},
-    {type:'fuel',name:'Turneffe Flats Lodge',lat:17.352,lon:-87.845,detail:'Lodge dock fuel — guide access',url:'https://www.tflats.com/'},
-    {type:'bar', name:'Palapa Bar & Grill — San Pedro',lat:17.922,lon:-87.958,detail:'Famous over-water tiki bar',url:'https://www.facebook.com/palapabar/'},
-    {type:'bar', name:"Wet Willy's — Ambergris",lat:17.919,lon:-87.956,detail:'Waterfront dive bar, cold drinks',url:'https://www.google.com/maps/search/Wet+Willys+Ambergris+Caye+Belize'},
+    {type:'seatow',name:'Belize Coast Guard — Emergency',  lat:17.498,lon:-88.188,detail:'VHF Ch 16 · Emergency only · San Pedro: +501-226-2022',url:'tel:+5012262022'},
+    {type:'ramp',name:'San Pedro Town Ramp',               lat:17.918,lon:-87.963,detail:'Main public ramp · Ambergris Caye',url:'https://www.google.com/maps/search/San+Pedro+boat+ramp+Belize'},
+    {type:'fuel',name:'Banana Beach Marina Fuel',           lat:17.912,lon:-87.964,detail:'Fuel dock, ice, guide services · San Pedro south',url:'https://www.bananabeachbelize.com/'},
+    {type:'fuel',name:'Turneffe Flats Lodge Dock',         lat:17.352,lon:-87.845,detail:'Lodge dock fuel — guide access only',url:'https://www.tflats.com/'},
+    {type:'bar',name:'Palapa Bar & Grill — San Pedro',     lat:17.922,lon:-87.958,detail:'Famous over-water tiki · San Pedro · boat tie-up',url:'https://www.facebook.com/palapabar/'},
+    {type:'bar',name:"Wet Willy's — Ambergris Caye",      lat:17.919,lon:-87.956,detail:'Waterfront dive bar · cold drinks · dinghy dock',url:'https://www.google.com/maps/search/Wet+Willys+Ambergris+Caye+Belize'},
   ],
   mexico:[
-    {type:'ramp',name:'Punta Allen Ramp',lat:19.617,lon:-87.533,detail:'Only ramp for Ascension Bay — call guide first',url:'https://www.google.com/maps/search/Punta+Allen+boat+ramp+Mexico'},
-    {type:'fuel',name:'Punta Allen Village Fuel',lat:19.619,lon:-87.531,detail:'Very limited — call guide to confirm',url:'https://www.google.com/maps/search/Punta+Allen+fuel+Yucatan'},
-    {type:'bar', name:'Cuzan Guest House — Punta Allen',lat:19.618,lon:-87.532,detail:'Remote lodge, bar, Ascension Bay base',url:'https://www.cuzanguesthouse.com/'},
-    {type:'bar', name:'Boca Paila Lodge',lat:20.138,lon:-87.457,detail:'Fly fishing lodge, bar, Biosphere reserve',url:'https://www.bocapaila.com/'},
+    {type:'seatow',name:'Mexico Emergency — SEMAR',         lat:19.617,lon:-87.533,detail:'VHF Ch 16 · Armada de Mexico · +52-998-887-3100',url:'tel:+529988873100'},
+    {type:'ramp',name:'Punta Allen Ramp',                  lat:19.617,lon:-87.533,detail:'Only ramp for Ascension Bay · call guide first',url:'https://www.google.com/maps/search/Punta+Allen+boat+ramp+Mexico'},
+    {type:'fuel',name:'Punta Allen Village Fuel',           lat:19.619,lon:-87.531,detail:'Very limited supply · call guide day before to confirm',url:'https://www.google.com/maps/search/Punta+Allen+fuel+Yucatan'},
+    {type:'bar',name:'Cuzan Guest House — Punta Allen',    lat:19.618,lon:-87.532,detail:'Remote lodge, bar, meals · Ascension Bay base',url:'https://www.cuzanguesthouse.com/'},
+    {type:'bar',name:'Boca Paila Lodge',                   lat:20.138,lon:-87.457,detail:'Fly fishing lodge, bar · Biosphere reserve',url:'https://www.bocapaila.com/'},
   ]
 };
 
@@ -1947,21 +1961,28 @@ function haversineMi(la1,lo1,la2,lo2){
 
 function renderAmenities(){
   const list=AMENITIES[ST.region]||[];
-  const icons={ramp:'⛵',fuel:'⛽',bar:'🍹'};
-  const types={ramp:'BOAT RAMP',fuel:'FUEL DOCK (REC-90)',bar:'BAR / RESTAURANT'};
-  const sorted=list.map(a=>({...a,dist:haversineMi(ST.lat,ST.lon,a.lat,a.lon)})).sort((a,b)=>a.dist-b.dist);
+  const icons={ramp:'⛵',fuel:'⛽',bar:'🍽',seatow:'🆘'};
+  const types={ramp:'BOAT RAMP',fuel:'FUEL DOCK',bar:'RESTAURANT / BAR',seatow:'SEA TOW — 24/7 EMERGENCY'};
+  const withDist=list.map(a=>({...a,dist:haversineMi(ST.lat,ST.lon,a.lat,a.lon)}));
+  // Sea Tow always at top (nearest first), then rest sorted by distance
+  const seatow=withDist.filter(a=>a.type==='seatow').sort((a,b)=>a.dist-b.dist);
+  const rest=withDist.filter(a=>a.type!=='seatow').sort((a,b)=>a.dist-b.dist);
+  const sorted=[...seatow,...rest];
   if(!sorted.length){document.getElementById('amenList').innerHTML='<div style="font-family:Share Tech Mono,monospace;font-size:10px;color:var(--dim);padding:12px;text-align:center">No services found for this region.</div>';return;}
   document.getElementById('amenList').innerHTML=sorted.map(a=>{
-    const col=a.dist<5?'var(--grn)':a.dist<15?'var(--gold)':' var(--red)';
+    const isST=a.type==='seatow';
+    const col=isST?'#E53E3E':a.dist<5?'var(--grn)':a.dist<15?'var(--gold)':'var(--red)';
     const lbl=a.dist.toFixed(1)+'mi';
     const url=a.url||'https://www.google.com/maps/search/'+encodeURIComponent(a.name);
-    return '<a href="'+url+'" target="_blank" style="text-decoration:none;display:block">'+
-      '<div class="amen-card '+a.type+'" style="cursor:pointer" onmouseover="this.style.opacity=\'.8\'" onmouseout="this.style.opacity=\'1\'">'+
-      '<div style="font-size:14px;flex-shrink:0;margin-top:2px">'+( icons[a.type]||'📍')+'</div>'+
+    const cardStyle=isST?'border:1px solid #E53E3E;background:rgba(229,62,62,0.08);':'';
+    const detailLine=isST&&a.phone?a.detail+'<br><span style="color:#E53E3E;font-weight:700">'+a.phone+'</span>':a.detail;
+    return '<a href="'+url+'" target="'+(isST?'_self':'_blank')+'" style="text-decoration:none;display:block">'+
+      '<div class="amen-card '+a.type+'" style="cursor:pointer;'+cardStyle+'" onmouseover="this.style.opacity=\'.8\'" onmouseout="this.style.opacity=\'1\'">'+
+      '<div style="font-size:14px;flex-shrink:0;margin-top:2px">'+(icons[a.type]||'📍')+'</div>'+
       '<div style="flex:1">'+
-        '<div class="amen-name" style="color:var(--cyan);text-decoration:underline;text-underline-offset:2px">'+a.name+' ↗</div>'+
-        '<div style="font-size:8px;color:var(--gold);font-family:Share Tech Mono,monospace;letter-spacing:1px">'+( types[a.type]||a.type.toUpperCase())+'</div>'+
-        '<div class="amen-detail">'+a.detail+'</div>'+
+        '<div class="amen-name" style="color:'+(isST?'#FF6B6B':'var(--cyan)')+';text-decoration:underline;text-underline-offset:2px">'+a.name+(isST?' ☎':' ↗')+'</div>'+
+        '<div style="font-size:8px;color:'+(isST?'#E53E3E':'var(--gold)')+';font-family:Share Tech Mono,monospace;letter-spacing:1px">'+(types[a.type]||a.type.toUpperCase())+'</div>'+
+        '<div class="amen-detail">'+detailLine+'</div>'+
       '</div>'+
       '<div style="font-size:12px;color:'+col+';font-family:Orbitron,monospace;font-weight:900;white-space:nowrap;flex-shrink:0">'+lbl+'</div>'+
       '</div></a>';
