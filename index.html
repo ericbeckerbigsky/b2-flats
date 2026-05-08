@@ -490,21 +490,28 @@ body.dark .sc.bf{background:#000d1a}
 
 <div class="panel">
     <div class="pt">◈ NEXRAD RADAR — <span id="radLbl" style="color:var(--cyan)">--</span></div>
-    <div class="radar-wrap">
-      <svg width="100%" height="100%" viewBox="0 0 240 220" style="position:absolute;top:0;left:0">
-        <circle cx="120" cy="110" r="36" fill="none" stroke="rgba(0,255,0,.12)" stroke-width="1" stroke-dasharray="3,3"/>
-        <circle cx="120" cy="110" r="72" fill="none" stroke="rgba(0,255,0,.09)" stroke-width="1" stroke-dasharray="3,3"/>
-        <circle cx="120" cy="110" r="105" fill="none" stroke="#E53E3E" stroke-width="1.5" stroke-dasharray="4,3"/>
-        <line x1="120" y1="3" x2="120" y2="217" stroke="rgba(0,255,0,.07)" stroke-width="0.5"/>
-        <line x1="3" y1="110" x2="237" y2="110" stroke="rgba(0,255,0,.07)" stroke-width="0.5"/>
-        <text x="126" y="78" fill="rgba(0,255,0,.5)" font-size="7" font-family="Share Tech Mono,monospace">5mi</text>
-        <text x="126" y="44" fill="rgba(0,255,0,.45)" font-size="7" font-family="Share Tech Mono,monospace">10mi</text>
-        <text x="126" y="12" fill="#E53E3E" font-size="7" font-family="Share Tech Mono,monospace" font-weight="bold">◉ 15mi RANGE</text>
-        <circle cx="120" cy="110" r="5" fill="#00E5FF"/>
-        <circle cx="120" cy="110" r="10" fill="none" stroke="#00E5FF" stroke-width="1.5" opacity="0.5"/>
-      </svg>
-      <div class="radar-sweep"></div>
-      <div style="position:absolute;bottom:4px;right:6px;font-family:'Share Tech Mono',monospace;font-size:9px;color:rgba(0,255,0,.5);font-weight:700">LIVE</div>
+    <div class="radar-wrap" style="background:#000;overflow:hidden;position:relative">
+      <!-- NOAA NEXRAD live radar image — updates every 5 minutes -->
+      <img id="radarImg" src="" alt="NEXRAD radar loading..."
+           style="width:100%;height:100%;object-fit:cover;display:block;opacity:0;transition:opacity 0.5s"
+           onload="this.style.opacity='1'" onerror="radarImgError(this)"/>
+      <!-- Overlay: location pin + range ring -->
+      <div style="position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none">
+        <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
+          <circle id="radarPin" cx="50" cy="50" r="1.5" fill="#00E5FF"/>
+          <circle id="radarRing" cx="50" cy="50" r="8" fill="none" stroke="#E53E3E"
+                  stroke-width="0.5" stroke-dasharray="2,2"/>
+        </svg>
+      </div>
+      <div id="radarStatus" style="position:absolute;bottom:4px;left:6px;
+           font-family:'Share Tech Mono',monospace;font-size:8px;
+           color:rgba(0,255,0,.8);font-weight:700;text-shadow:0 0 4px #000">
+        LOADING...
+      </div>
+      <div id="radarTime" style="position:absolute;bottom:4px;right:6px;
+           font-family:'Share Tech Mono',monospace;font-size:8px;
+           color:rgba(0,255,0,.6);text-shadow:0 0 4px #000">
+      </div>
     </div>
 </div>
 
@@ -992,6 +999,7 @@ const ST={
   baroHist:[],tidePhase:'RISING',tideFlow:'MODERATE',
   tideHt:'1.2',nextHigh:'--',nextLow:'--',
   tidePreds:[],noaaStationId:'8723698',noaaStationName:'Tavernier, FL',
+  minsToMajor:120,minsToMinor:120,
   busy:false,gpsWatcher:null
 };
 
@@ -1736,15 +1744,31 @@ function calcLunar(){
 // SOLUNAR
 // ══════════════════════════════════════════════════════════════════
 function calcSolunar(){
-  const now=new Date();
-  const dy=Math.floor((now-new Date(now.getFullYear(),0,0))/86400000);
-  const mo=(dy*.966)%24,h=now.getHours()+now.getMinutes()/60;
-  [{h:mo%24},{h:(mo+6.2)%24},{h:(mo+12.4)%24},{h:(mo+18.6)%24}]
-    .sort((a,b)=>a.h-b.h)
-    .forEach((t,i)=>document.getElementById('s'+(i+1)).textContent=fmtH(t.h));
-  const nM=[mo,mo+12.4].map(m=>m<h?m+24:m).sort((a,b)=>a-b)[0];
-  document.getElementById('nextMaj').textContent=fmtH(nM%24);
-  document.getElementById('alS').textContent='NEXT MAJOR: '+fmtH(nM%24);
+  var now=new Date();
+  var dy=Math.floor((now-new Date(now.getFullYear(),0,0))/86400000);
+  var mo=(dy*.966)%24, h=now.getHours()+now.getMinutes()/60;
+  var periods=[{h:mo%24,major:true},{h:(mo+6.2)%24,major:true},
+               {h:(mo+12.4)%24,major:false},{h:(mo+18.6)%24,major:false}];
+  periods.sort(function(a,b){return a.h-b.h;});
+  periods.forEach(function(t,i){
+    var el=document.getElementById('s'+(i+1));
+    if(el)el.textContent=fmtH(t.h);
+  });
+  // Next major period
+  var nM=[mo,mo+12.4].map(function(m){return m<h?m+24:m;}).sort(function(a,b){return a-b;})[0];
+  var el=document.getElementById('nextMaj'); if(el)el.textContent=fmtH(nM%24);
+  var alS=document.getElementById('alS'); if(alS)alS.textContent='NEXT MAJOR: '+fmtH(nM%24);
+  // Store minutes to nearest major/minor for species scoring
+  var minsToMajor=Math.min.apply(null,[mo,mo+12.4].map(function(m){
+    var diff=Math.abs(h-(m<0?m+24:m))*60;
+    return Math.min(diff,Math.abs(diff-1440));
+  }));
+  var minsToMinor=Math.min.apply(null,[mo+6.2,mo+18.6].map(function(m){
+    var diff=Math.abs(h-(m<0?m+24:m))*60;
+    return Math.min(diff,Math.abs(diff-1440));
+  }));
+  ST.minsToMajor=Math.round(minsToMajor);
+  ST.minsToMinor=Math.round(minsToMinor);
 }
 
 // ══ RECALC TIDE STATE FROM LOADED PREDS (no fetch) ══════════════
@@ -1819,10 +1843,10 @@ function calcScores(){
   var isNight     = timeDecimal>=22.5 || timeDecimal<4.0;
 
   // ── TARPON SCORE ──
-  // Peak: dawn & dusk with MOVING water. Tide is a gate — slack kills the bite
-  // regardless of time. Formula: tide is 60% weight, time 40%.
-  // Additional gate: SLACK tide caps the score at 45% (FAIR) regardless of time.
-  // Tarpon need current to feed — slack water makes them lock up.
+  // Weights: Tide 50% (dominant) · Time 25% · Thermal 15% · Solunar 10%
+  // Hard gates: SLACK→cap 35%, temp<65→cap 25%, temp>93→cap 50%, temp<50→0%
+
+  // TIME factor
   var tpTimeFactor = isPreDawn   ? 0.80 :
                      isDawn      ? 1.00 :
                      isMorning   ? 0.65 :
@@ -1830,12 +1854,56 @@ function calcScores(){
                      isAfternoon ? 0.55 :
                      isDusk      ? 1.00 :
                      isEvening   ? 0.60 :
-                                   0.20;  // night
+                                   0.20;
 
-  var tpRaw = Math.round(((tideMoving*0.60)+(tpTimeFactor*0.40))*100);
-  // SLACK WATER GATE: cap at 45% — tarpon shut down in dead water
-  var tpS = (ST.tideFlow==='SLACK') ? Math.min(tpRaw, 45) : tpRaw;
+  // THERMAL MULTIPLIER — scales the entire base score.
+  // Optimal 79-89°F per field experience. Thermal gates the full result,
+  // preserving tide as dominant while cold/hot temps genuinely tank the score.
+  var wt=ST.waterTemp||82;
+  var tpThermal = wt<50  ? 0.00 :   // lethal — no tarpon
+                  wt<65  ? 0.05 :   // cold-stunned — 5% of potential
+                  wt<72  ? 0.20 :   // cold — fish absent or dormant
+                  wt<76  ? 0.45 :   // marginal — present but very slow
+                  wt<79  ? 0.70 :   // below optimal — fish activating
+                  wt<=89 ? 1.00 :   // OPTIMAL 79-89°F — full score
+                  wt<=92 ? 0.70 :   // warm — reduced but still fishable
+                  wt<=95 ? 0.40 :   // significant heat stress
+                           0.15;    // extreme heat >95°F
 
+  // SOLUNAR factor — gravitational influence on feeding activity
+  var solMaj=ST.minsToMajor||120, solMin=ST.minsToMinor||120;
+  var tpSolunar = solMaj<=30  ? 1.00 :   // within major period now
+                  solMaj<=60  ? 0.75 :   // approaching/leaving major
+                  solMaj<=90  ? 0.50 :   // major within 90 min
+                  solMin<=30  ? 0.50 :   // within minor period
+                  solMin<=60  ? 0.30 :   // near minor period
+                                0.10;   // no solunar influence
+
+  // SEASON multiplier — April 15 to June 15 peak Keys migration
+  var now2=new Date();
+  var doy=Math.floor((now2-new Date(now2.getFullYear(),0,0))/86400000);
+  var isPeakSeason=(doy>=105&&doy<=166); // Apr 15=105, Jun 15=166
+  var tpSeasonMult=isPeakSeason?1.10:1.00;
+
+  // BASE score from tide (dominant) + time + solunar, then scaled by thermal
+  // Tide 55% · Time 30% · Solunar 15% — thermal multiplies the result
+  var tpBase=(tideMoving*0.55)+(tpTimeFactor*0.30)+(tpSolunar*0.15);
+  var tpRaw=Math.round(tpBase*tpThermal*100);
+
+  // Season lift (capped at 100)
+  tpRaw=Math.min(100,Math.round(tpRaw*tpSeasonMult));
+
+  // Thermal relief bonus — ocean side, >89°F, incoming brings cool water
+  if(wt>89&&ST.tidePhase==='RISING'&&(ST.tideFlow==='STRONG'||ST.tideFlow==='MODERATE')){
+    tpRaw=Math.min(100,tpRaw+8);
+  }
+
+  // HARD GATES — biological limits that override everything
+  var tpS=tpRaw;
+  if(wt<50)               { tpS=0; }              // lethal — no tarpon
+  else if(ST.tideFlow==='SLACK') { tpS=Math.min(tpS,35); } // slack kills the bite
+
+  // DESCRIPTIONS
   var tpDesc = isPreDawn   ? 'PRE-DAWN — black/purple flies, start moving' :
                isDawn      ? 'GOLDEN HOUR — prime window, dark flies' :
                isMorning   ? 'MORNING — fish still moving, natural tones' :
@@ -1845,11 +1913,27 @@ function calcScores(){
                isEvening   ? 'EVENING — late feeders, low-light patterns' :
                              'NIGHT — limited visibility';
 
+  // Append thermal advice when relevant
+  if(wt>92&&wt<=95) tpDesc+=' · Heat stress — fish going deep, focus channels';
+  if(wt>95) tpDesc+=' · EXTREME HEAT — focus cool water inflows and depth transitions';
+  if(wt<72) tpDesc+=' · Cold water — tarpon likely off the flats';
+  else if(wt<79) tpDesc+=' · Below optimal — fish present but sluggish';
+  if(isPeakSeason) tpDesc+=' · PEAK MIGRATION';
+  if(tpSolunar>=0.75) tpDesc+=' · SOLUNAR MAJOR ACTIVE';
+  else if(tpSolunar>=0.50) tpDesc+=' · Solunar influence';
+
   var tpTimeTag = isPreDawn||isEvening ? ['NEAR PRIME','ty'] :
                   isDawn||isDusk       ? ['GOLDEN HOUR','tg'] :
                   isMorning||isAfternoon ? ['ACTIVE','tb'] :
                   isMidDay             ? ['MID-DAY','tr'] :
                                          ['NIGHT','tr'];
+  var tpThermalTag = wt>=79&&wt<=89  ? ['PRIME TEMP','tg'] :
+                     wt>89&&wt<=92   ? ['WARM','ty'] :
+                     wt>=72&&wt<79   ? ['BELOW OPT','ty'] :
+                                       ['POOR TEMP','tr'];
+  var tpSolTag = tpSolunar>=0.75 ? ['MAJOR ACTIVE','tg'] :
+                 tpSolunar>=0.50 ? ['SOL. INFLUENCE','ty'] :
+                                   ['NO SOLUNAR','tr'];
 
   // ── PERMIT SCORE ──
   // Tidal turn is king. Moon phase secondary. Mid-day is fine for permit.
@@ -1893,7 +1977,7 @@ function calcScores(){
     var tEl=document.getElementById(id+'T'); if(tEl)tEl.innerHTML=tags.map(function(t){return'<span class="tag '+t[1]+'">'+t[0]+'</span>';}).join('');
   }
 
-  upd('tp', tpS, tpDesc+' · Tide '+ST.tideFlow, [tpTimeTag, [tideMoving>0.5?'MOVING WATER':'SLACK WATER', tideMoving>0.5?'tb':'tr']]);
+  upd('tp', tpS, tpDesc+' · Tide '+ST.tideFlow, [tpTimeTag, tpThermalTag, tpSolTag]);
   var pmTimeTag = (timeDecimal>=10.0&&timeDecimal<=15.5)?['MID-DAY PRIME','tg']:
                   (timeDecimal>=8.5&&timeDecimal<=17.0)?['GOOD WINDOW','tb']:['OFF HOURS','ty'];
   upd('pm', pmS, pmDesc, [pmTideTag, pmMoonTag, pmTimeTag]);
@@ -1944,6 +2028,7 @@ function updateUI(){
   var bGuEl=document.getElementById('bWindGust'); if(bGuEl) bGuEl.textContent='G:'+ST.windGust+'kts';
   drawCompass(ST.windDir,ST.windSpd);
   updateFlyMatrix();drawBaro();
+  loadRadar(); // reload radar for new region/location
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -3107,6 +3192,82 @@ async function fetchBaroPressure(){
   return false;
 }
 
+// ══ NEXRAD RADAR ═══════════════════════════════════════════════════
+// NOAA RIDGE2 radar images — public domain, no API key, ~2-6min updates
+// Station selection by region, with precise pin positioning on the image
+var _radarTimer=null;
+
+function loadRadar(){
+  var region=ST.region||'keys';
+  var img=document.getElementById('radarImg');
+  var status=document.getElementById('radarStatus');
+  var timeEl=document.getElementById('radarTime');
+  if(!img)return;
+
+  // NOAA RIDGE2 WSR-88D stations
+  // Each station image covers ~300km radius as a square PNG
+  var stationMap={
+    keys:  {id:'KBYX', name:'KEY WEST WSR-88D',
+            // Station center lat/lon for pin positioning
+            clat:24.5975, clon:-81.7033,
+            // Image covers approx ±3° lat, ±4° lon from station
+            latRange:3.0, lonRange:4.0},
+    pine:  {id:'KTBW', name:'TAMPA BAY WSR-88D',
+            clat:27.7056, clon:-82.4019,
+            latRange:3.0, lonRange:4.0},
+    belize:{id:'KTBW', name:'TAMPA BAY WSR-88D', // No US NEXRAD in Belize
+            clat:27.7056, clon:-82.4019,
+            latRange:3.0, lonRange:4.0},
+    mexico:{id:'KTBW', name:'TAMPA BAY WSR-88D',
+            clat:27.7056, clon:-82.4019,
+            latRange:3.0, lonRange:4.0},
+  };
+  var stn=stationMap[region]||stationMap.keys;
+
+  // NOAA RIDGE2 URL: auto-updating PNG, cache-busted with timestamp
+  var ts=Math.floor(Date.now()/300000)*300000; // 5-min buckets
+  var url='https://radar.weather.gov/ridge/standard/'+stn.id+'_0.png?_='+ts;
+
+  img.style.opacity='0';
+  img.src=url;
+
+  if(status)status.textContent=stn.name+' LIVE';
+
+  // Position the pin: convert ST.lat/lon to % position on the radar image
+  // NOAA RIDGE images are oriented N-up, station centered
+  // Image spans: lat from (clat-latRange) to (clat+latRange)
+  //              lon from (clon-lonRange) to (clon+lonRange)
+  var pinEl=document.getElementById('radarPin');
+  var ringEl=document.getElementById('radarRing');
+  if(pinEl&&ST.lat&&ST.lon){
+    var px=((ST.lon-stn.clon)/stn.lonRange/2+0.5)*100;
+    var py=(1-(ST.lat-stn.clat)/stn.latRange/2-0.5)*100;
+    px=Math.max(2,Math.min(98,px));
+    py=Math.max(2,Math.min(98,py));
+    pinEl.setAttribute('cx',px); pinEl.setAttribute('cy',py);
+    if(ringEl){ringEl.setAttribute('cx',px); ringEl.setAttribute('cy',py);}
+  }
+
+  // Update timestamp
+  if(timeEl){
+    var now=new Date();
+    var hh=now.getHours()%12||12, mm=String(now.getMinutes()).padStart(2,'0');
+    var ap=now.getHours()>=12?'PM':'AM';
+    timeEl.textContent='Updated '+hh+':'+mm+ap;
+  }
+}
+
+function radarImgError(img){
+  var status=document.getElementById('radarStatus');
+  if(status)status.textContent='RADAR UNAVAILABLE';
+  // Try fallback station KAMX if KBYX fails
+  if(img.src.indexOf('KBYX')>-1){
+    var ts=Math.floor(Date.now()/300000)*300000;
+    img.src='https://radar.weather.gov/ridge/standard/KAMX_0.png?_='+ts;
+    if(status)status.textContent='KAMX MIAMI FALLBACK';
+  }
+}
+
 async function go(){
   if(ST.busy)return;ST.busy=true;
   try{
@@ -3198,6 +3359,8 @@ setInterval(()=>{document.getElementById('clk').textContent=new Date().toLocaleS
   initMap();detectRegion();updateDepth();renderSpots();renderAmenities();
   calcLunar();calcSolunar();calcPalolo();renderForecast();
   setTimeout(go,500);
+  setTimeout(loadRadar,1000);
+  setInterval(loadRadar,300000); // refresh radar every 5 minutes
   // Start wind animation AFTER go() fetches real wind data
   setTimeout(function(){ startWindAnimation(); }, 4000);
   setInterval(go,600000);
