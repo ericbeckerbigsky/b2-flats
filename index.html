@@ -432,6 +432,7 @@ body.dark .sc.bf{background:#000d1a}
         <button class="mbtn" id="gpsBtn" onclick="startGPS()">📍 MY LOCATION</button>
         <button class="mbtn" onclick="jumpTo(24.6450,-81.5333,11)">🎯 FL KEYS</button>
         <button class="mbtn" onclick="jumpTo(26.5610,-82.1910,9)">🎯 PINE IS.</button>
+        <button id="radarToggleBtn" class="mbtn" onclick="toggleRadarOverlay()" style="background:rgba(229,62,62,0.2);border:1px solid var(--red)">◯ RADAR</button>
       </div>
       <div class="map-bar" id="mapBar">TAP MAP TO SELECT LOCATION · DRAG TO SCROLL · SCROLL/PINCH TO ZOOM</div>
       <div class="map-depth"><div class="dv" id="dVal">--</div><div class="dl">DEPTH ft</div></div>
@@ -490,28 +491,18 @@ body.dark .sc.bf{background:#000d1a}
 
 <div class="panel">
     <div class="pt">◈ NEXRAD RADAR — <span id="radLbl" style="color:var(--cyan)">--</span></div>
-    <div class="radar-wrap" style="background:#000;overflow:hidden;position:relative">
-      <!-- NOAA NEXRAD live radar image — updates every 5 minutes -->
-      <img id="radarImg" src="" alt="NEXRAD radar loading..."
-           style="width:100%;height:100%;object-fit:cover;display:block;opacity:0;transition:opacity 0.5s"
-           onload="this.style.opacity='1'" onerror="radarImgError(this)"/>
-      <!-- Overlay: location pin + range ring -->
-      <div style="position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none">
-        <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
-          <circle id="radarPin" cx="50" cy="50" r="1.5" fill="#00E5FF"/>
-          <circle id="radarRing" cx="50" cy="50" r="8" fill="none" stroke="#E53E3E"
-                  stroke-width="0.5" stroke-dasharray="2,2"/>
-        </svg>
+    <div class="radar-wrap" style="background:#0a0a0a;overflow:hidden;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px">
+      <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--grn);font-weight:700;letter-spacing:1px">
+        ◉ LIVE PRECIPITATION RADAR
       </div>
-      <div id="radarStatus" style="position:absolute;bottom:4px;left:6px;
-           font-family:'Share Tech Mono',monospace;font-size:8px;
-           color:rgba(0,255,0,.8);font-weight:700;text-shadow:0 0 4px #000">
-        LOADING...
+      <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--dim);text-align:center;padding:0 12px">
+        Tap <span style="color:var(--red);font-weight:700">◯ RADAR</span> button on the map above to overlay live RainViewer precipitation data on your fishing chart
       </div>
-      <div id="radarTime" style="position:absolute;bottom:4px;right:6px;
-           font-family:'Share Tech Mono',monospace;font-size:8px;
-           color:rgba(0,255,0,.6);text-shadow:0 0 4px #000">
+      <div id="radarStatus" style="font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--gold);margin-top:4px">
+        INITIALIZING...
       </div>
+      <div id="radarTime" style="font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--dim)"></div>
+      <img id="radarImg" src="" alt="" style="display:none" onerror="this.style.display='none'"/>
     </div>
 </div>
 
@@ -541,7 +532,7 @@ body.dark .sc.bf{background:#000d1a}
     <div class="lunar-row">
       <div style="font-size:36px;line-height:1" id="moonEm">🌕</div>
       <div>
-        <div style="font-family:'Orbitron',monospace;font-size:10px;color:var(--gold);font-weight:700;margin-bottom:2px" id="moonNm">LOADING...</div>
+        <div style="font-family:'Orbitron',monospace;font-size:10px;color:var(--gold);font-weight:700;margin-bottom:2px" id="moonNm">INITIALIZING...</div>
         <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--dim)" id="moonIl">--% illuminated</div>
         <div style="font-size:9px;margin-top:3px;font-family:'Share Tech Mono',monospace;font-weight:700" id="moonBon"></div>
         <div style="font-size:9px;margin-top:4px;font-family:'Share Tech Mono',monospace;color:var(--dim)" id="moonNext"></div>
@@ -3192,81 +3183,82 @@ async function fetchBaroPressure(){
   return false;
 }
 
-// ══ NEXRAD RADAR ═══════════════════════════════════════════════════
-// NOAA RIDGE2 radar images — public domain, no API key, ~2-6min updates
-// Station selection by region, with precise pin positioning on the image
-var _radarTimer=null;
+// ══ NEXRAD RADAR — RainViewer live precipitation overlay ═══════════
+// Uses RainViewer public API (no key required) for worldwide radar tiles.
+// Fetches latest radar timestamp then adds as Leaflet tile layer on the map.
+// Also displays a status indicator in the radar panel.
+var _rainLayer=null, _rainTimer=null, _rainTs='';
 
-function loadRadar(){
-  var region=ST.region||'keys';
-  var img=document.getElementById('radarImg');
+async function loadRadar(){
   var status=document.getElementById('radarStatus');
   var timeEl=document.getElementById('radarTime');
-  if(!img)return;
+  var img=document.getElementById('radarImg');
+  try{
+    var r=await fetch('https://api.rainviewer.com/public/weather-maps.json');
+    var d=await r.json();
+    if(!d.radar||!d.radar.past||!d.radar.past.length) throw new Error('No data');
+    // Get the most recent radar frame
+    var frame=d.radar.past[d.radar.past.length-1];
+    var path=frame.path; // e.g. "/v2/radar/1609401600"
+    var ts=frame.time;
+    // Only update if timestamp changed
+    if(path===_rainTs) return;
+    _rainTs=path;
 
-  // NOAA RIDGE2 WSR-88D stations
-  // Each station image covers ~300km radius as a square PNG
-  var stationMap={
-    keys:  {id:'KBYX', name:'KEY WEST WSR-88D',
-            // Station center lat/lon for pin positioning
-            clat:24.5975, clon:-81.7033,
-            // Image covers approx ±3° lat, ±4° lon from station
-            latRange:3.0, lonRange:4.0},
-    pine:  {id:'KTBW', name:'TAMPA BAY WSR-88D',
-            clat:27.7056, clon:-82.4019,
-            latRange:3.0, lonRange:4.0},
-    belize:{id:'KTBW', name:'TAMPA BAY WSR-88D', // No US NEXRAD in Belize
-            clat:27.7056, clon:-82.4019,
-            latRange:3.0, lonRange:4.0},
-    mexico:{id:'KTBW', name:'TAMPA BAY WSR-88D',
-            clat:27.7056, clon:-82.4019,
-            latRange:3.0, lonRange:4.0},
-  };
-  var stn=stationMap[region]||stationMap.keys;
+    // Update Leaflet tile overlay on the main map
+    if(_rainLayer){map.removeLayer(_rainLayer);}
+    var tileUrl='https://tilecache.rainviewer.com'+path+'/256/{z}/{x}/{y}/4/1_1.png';
+    _rainLayer=L.tileLayer(tileUrl,{
+      opacity:0.65,
+      zIndex:450,
+      attribution:'<a href="https://www.rainviewer.com">RainViewer</a>'
+    });
+    // Only add if radar layer toggle is ON
+    if(_radarOn) _rainLayer.addTo(map);
 
-  // NOAA RIDGE2 URL: auto-updating PNG, cache-busted with timestamp
-  var ts=Math.floor(Date.now()/300000)*300000; // 5-min buckets
-  var url='https://radar.weather.gov/ridge/standard/'+stn.id+'_0.png?_='+ts;
+    // Update the radar panel with a single-location overview image
+    // RainViewer single image: {path}/256/{lat}/{lon}/{size}/{color}_{snow}.png
+    if(img&&ST.lat&&ST.lon){
+      var singleUrl='https://tilecache.rainviewer.com'+path+
+        '/512/'+ST.lat.toFixed(4)+'/'+ST.lon.toFixed(4)+'/4/1_1.png';
+      img.style.opacity='0';
+      img.src=singleUrl;
+    }
 
-  img.style.opacity='0';
-  img.src=url;
-
-  if(status)status.textContent=stn.name+' LIVE';
-
-  // Position the pin: convert ST.lat/lon to % position on the radar image
-  // NOAA RIDGE images are oriented N-up, station centered
-  // Image spans: lat from (clat-latRange) to (clat+latRange)
-  //              lon from (clon-lonRange) to (clon+lonRange)
-  var pinEl=document.getElementById('radarPin');
-  var ringEl=document.getElementById('radarRing');
-  if(pinEl&&ST.lat&&ST.lon){
-    var px=((ST.lon-stn.clon)/stn.lonRange/2+0.5)*100;
-    var py=(1-(ST.lat-stn.clat)/stn.latRange/2-0.5)*100;
-    px=Math.max(2,Math.min(98,px));
-    py=Math.max(2,Math.min(98,py));
-    pinEl.setAttribute('cx',px); pinEl.setAttribute('cy',py);
-    if(ringEl){ringEl.setAttribute('cx',px); ringEl.setAttribute('cy',py);}
-  }
-
-  // Update timestamp
-  if(timeEl){
-    var now=new Date();
-    var hh=now.getHours()%12||12, mm=String(now.getMinutes()).padStart(2,'0');
+    // Update status
+    var now=new Date(ts*1000);
+    var hh=now.getHours()%12||12;
+    var mm=String(now.getMinutes()).padStart(2,'0');
     var ap=now.getHours()>=12?'PM':'AM';
-    timeEl.textContent='Updated '+hh+':'+mm+ap;
+    if(status)status.textContent='LIVE PRECIP RADAR';
+    if(timeEl)timeEl.textContent=hh+':'+mm+ap;
+
+  }catch(e){
+    console.warn('Radar:',e.message);
+    if(status)status.textContent='NO RADAR DATA';
+    if(img)img.style.opacity='0';
   }
 }
 
 function radarImgError(img){
-  var status=document.getElementById('radarStatus');
-  if(status)status.textContent='RADAR UNAVAILABLE';
-  // Try fallback station KAMX if KBYX fails
-  if(img.src.indexOf('KBYX')>-1){
-    var ts=Math.floor(Date.now()/300000)*300000;
-    img.src='https://radar.weather.gov/ridge/standard/KAMX_0.png?_='+ts;
-    if(status)status.textContent='KAMX MIAMI FALLBACK';
+  img.style.opacity='0'; // hide broken image silently
+}
+
+// Radar toggle state
+var _radarOn=false;
+
+function toggleRadarOverlay(){
+  _radarOn=!_radarOn;
+  var btn=document.getElementById('radarToggleBtn');
+  if(_radarOn){
+    if(_rainLayer) _rainLayer.addTo(map);
+    if(btn){btn.style.background='var(--red)';btn.textContent='◉ RADAR ON';}
+  }else{
+    if(_rainLayer) map.removeLayer(_rainLayer);
+    if(btn){btn.style.background='rgba(0,0,0,0.6)';btn.textContent='◯ RADAR';}
   }
 }
+
 
 async function go(){
   if(ST.busy)return;ST.busy=true;
